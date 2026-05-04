@@ -6,7 +6,7 @@ import { HealthStatus } from '../models/health-status.model';
 import { ApiService } from './api.service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class HealthService {
   private readonly api = inject(ApiService);

@@ -8,5 +8,5 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) =>
       const message = error.error?.message ?? error.message ?? fallbackMessage;
 
       return throwError(() => new Error(message));
-    })
+    }),
   );
