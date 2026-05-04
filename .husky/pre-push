@@ -1,0 +1,25 @@
+branch=$(git rev-parse --abbrev-ref HEAD)
+
+valid_pattern="^(feat|fix|refactor|docs|test|chore|hotfix)\/[a-z0-9._-]+$"
+
+if [ "$branch" = "main" ] || [ "$branch" = "develop" ]; then
+  exit 0
+fi
+
+if ! echo "$branch" | grep -qE "$valid_pattern"; then
+  echo ""
+  echo "Branch name '$branch' does not follow the naming convention."
+  echo ""
+  echo "Allowed formats:"
+  echo "  feat/short-description"
+  echo "  fix/short-description"
+  echo "  refactor/short-description"
+  echo "  docs/short-description"
+  echo "  test/short-description"
+  echo "  chore/short-description"
+  echo "  hotfix/short-description"
+  echo ""
+  echo "Use lowercase letters, numbers, dots, hyphens, or underscores after the prefix."
+  echo ""
+  exit 1
+fi
