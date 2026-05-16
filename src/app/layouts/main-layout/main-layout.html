@@ -1,0 +1,86 @@
+<div class="dashboard-shell">
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="brand">AEGIS IDS</div>
+      <nav class="top-nav">
+        <a
+          routerLink="/app/dashboard"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          Main Console
+        </a>
+        <a
+          routerLink="/app/traffic"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          Network Analysis
+        </a>
+        <a>Forensics</a>
+      </nav>
+    </div>
+
+    <div class="topbar-right">
+      <label class="search">
+        <span class="material-symbols-outlined">search</span>
+        <input type="text" placeholder="Search incidents..." />
+      </label>
+
+      <div class="actions">
+        <span class="material-symbols-outlined">monitor_heart</span>
+        <span class="material-symbols-outlined">notifications</span>
+        <span class="material-symbols-outlined">settings</span>
+        <img
+          class="avatar"
+          src="https://lh3.googleusercontent.com/aida-public/AB6AXuCInui9IhItNeNmrHFMizgvbeOLE14TP-TpotrwOoX8nDag-04ZpyPkA58WYKI5U944WUOnfok9iLjkrTz6yiTG-JH_P5NyMesIeXAaS2vDYmVl_Ocw7h5MzG9p9gYaf_fjr3E68mlQaovuXhSMCQFudiunGfrJLUdbvjHzXEEB6vMuPoauV8YLpl5cCC-HtHbsYxhKGXbWNGDKQ6U9t7BAUhOfgceA_5_PC-6SP2yea3evDEcOmRDK7UKPCKLnWlsh907fdRlrsKQ"
+          alt="Analyst"
+        />
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidenav">
+      <div class="core">
+        <h3>SYSTEM CORE</h3>
+        <p>V6.4 Stable</p>
+      </div>
+
+      <nav class="menu">
+        <a
+          routerLink="/app/dashboard"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          <span class="material-symbols-outlined">dashboard</span>Overview
+        </a>
+        <a
+          routerLink="/app/traffic"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          <span class="material-symbols-outlined">swap_calls</span>Traffic
+        </a>
+        <a><span class="material-symbols-outlined">security</span>Incidents</a>
+        <a><span class="material-symbols-outlined">hub</span>Topology</a>
+        <a><span class="material-symbols-outlined">gavel</span>Rules</a>
+      </nav>
+
+      <nav class="menu secondary">
+        <a><span class="material-symbols-outlined">terminal</span>Log Viewer</a>
+        <a><span class="material-symbols-outlined">help_outline</span>Support</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <router-outlet />
+    </main>
+  </div>
+
+  <div class="floating-log">
+    <span class="material-symbols-outlined">terminal</span>
+    <p>[14:22:15] <strong>SYNC_OK</strong> node_04 connection established...</p>
+    <span class="pulse"></span>
+  </div>
+</div>

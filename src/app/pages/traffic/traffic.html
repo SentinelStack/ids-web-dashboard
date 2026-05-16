@@ -1,0 +1,244 @@
+<div class="traffic-page">
+  <section class="summary-grid">
+    <article class="glass card stat">
+      <div class="head">
+        <span>Total Packets (1h)</span><span class="material-symbols-outlined">network_check</span>
+      </div>
+      <div class="value">
+        <strong>4.2M</strong><em><span class="material-symbols-outlined">arrow_upward</span>12%</em>
+      </div>
+    </article>
+
+    <article class="glass card stat">
+      <div class="head">
+        <span>TCP Traffic %</span><span class="material-symbols-outlined">swap_horiz</span>
+      </div>
+      <div class="value">
+        <strong>68%</strong>
+        <div class="line"><span style="--w: 68%"></span></div>
+      </div>
+    </article>
+
+    <article class="glass card stat">
+      <div class="head">
+        <span>UDP Traffic %</span
+        ><span class="material-symbols-outlined">settings_input_antenna</span>
+      </div>
+      <div class="value">
+        <strong>24%</strong>
+        <div class="line"><span class="udp" style="--w: 24%"></span></div>
+      </div>
+    </article>
+
+    <article class="glass card stat warning">
+      <div class="head">
+        <span>Suspicious Traffic %</span><span class="material-symbols-outlined">security</span>
+      </div>
+      <div class="value">
+        <strong>1.2%</strong><em><span class="material-symbols-outlined">warning</span>Alert</em>
+      </div>
+    </article>
+  </section>
+
+  <section class="main-grid">
+    <article class="glass card flow">
+      <div class="flow-head">
+        <h2>Real-time Traffic Flow</h2>
+        <div class="legend">
+          <span><i class="dot tcp"></i>TCP</span>
+          <span><i class="dot udp"></i>UDP</span>
+          <button>Last 60 Minutes</button>
+        </div>
+      </div>
+
+      <div class="chart-wrap">
+        <svg viewBox="0 0 800 300" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="tcpFill" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="#00d1ff" stop-opacity="0.3"></stop>
+              <stop offset="100%" stop-color="#00d1ff" stop-opacity="0"></stop>
+            </linearGradient>
+            <linearGradient id="udpFill" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="#ddb7ff" stop-opacity="0.25"></stop>
+              <stop offset="100%" stop-color="#ddb7ff" stop-opacity="0"></stop>
+            </linearGradient>
+          </defs>
+          <line
+            x1="0"
+            y1="50"
+            x2="800"
+            y2="50"
+            stroke="rgba(255,255,255,.06)"
+            stroke-dasharray="4"
+          ></line>
+          <line
+            x1="0"
+            y1="150"
+            x2="800"
+            y2="150"
+            stroke="rgba(255,255,255,.06)"
+            stroke-dasharray="4"
+          ></line>
+          <line
+            x1="0"
+            y1="250"
+            x2="800"
+            y2="250"
+            stroke="rgba(255,255,255,.06)"
+            stroke-dasharray="4"
+          ></line>
+          <path
+            d="M0,200 L50,180 L100,220 L150,150 L200,170 L250,100 L300,120 L350,80 L400,140 L450,110 L500,90 L550,130 L600,100 L650,160 L700,130 L750,110 L800,140 V300 H0 Z"
+            fill="url(#tcpFill)"
+          ></path>
+          <path
+            d="M0,240 L50,220 L100,250 L150,210 L200,230 L250,190 L300,210 L350,180 L400,220 L450,200 L500,180 L550,210 L600,190 L650,230 L700,210 L750,190 L800,220 V300 H0 Z"
+            fill="url(#udpFill)"
+          ></path>
+          <path
+            d="M0,200 L50,180 L100,220 L150,150 L200,170 L250,100 L300,120 L350,80 L400,140 L450,110 L500,90 L550,130 L600,100 L650,160 L700,130 L750,110 L800,140"
+            fill="none"
+            stroke="#00d1ff"
+            stroke-width="2"
+          ></path>
+          <path
+            d="M0,240 L50,220 L100,250 L150,210 L200,230 L250,190 L300,210 L350,180 L400,220 L450,200 L500,180 L550,210 L600,190 L650,230 L700,210 L750,190 L800,220"
+            fill="none"
+            stroke="#ddb7ff"
+            stroke-width="2"
+          ></path>
+        </svg>
+
+        <div class="tooltip">
+          <small>T+14:22:04.281 MS</small>
+          <p><span>TCP TRAFFIC:</span>324.8 GB/s</p>
+          <p><span>UDP TRAFFIC:</span>112.4 GB/s</p>
+        </div>
+      </div>
+    </article>
+
+    <aside class="side-stack">
+      <article class="glass card small">
+        <h3>Top Protocols</h3>
+        <div class="metric">
+          <div><span>TCP</span><span>68.2%</span></div>
+          <b><i style="--w: 68.2%"></i></b>
+        </div>
+        <div class="metric">
+          <div><span>UDP</span><span>24.1%</span></div>
+          <b><i class="udp" style="--w: 24.1%"></i></b>
+        </div>
+        <div class="metric">
+          <div><span>ICMP</span><span>4.5%</span></div>
+          <b><i class="muted" style="--w: 4.5%"></i></b>
+        </div>
+      </article>
+
+      <article class="glass card small">
+        <h3>Top Ports</h3>
+        <div class="list-row"><span>443 (HTTPS)</span><small>1.2M PKTS</small></div>
+        <div class="list-row"><span>80 (HTTP)</span><small>842K PKTS</small></div>
+        <div class="list-row danger"><span>22 (SSH)</span><small>12K PKTS</small></div>
+      </article>
+
+      <article class="glass card small">
+        <h3>Top Source IPs</h3>
+        <div class="ip-row"><i class="ok"></i><span>192.168.1.104</span><small>LOCAL</small></div>
+        <div class="ip-row"><i class="wan"></i><span>142.250.72.110</span><small>WAN</small></div>
+        <div class="ip-row">
+          <i class="err"></i><span>45.227.253.12</span><small>EXTERNAL</small>
+        </div>
+      </article>
+    </aside>
+  </section>
+
+  <section class="glass card monitor">
+    <div class="monitor-head">
+      <div>
+        <span class="material-symbols-outlined">terminal</span>
+        <h2>Packet Stream Monitor</h2>
+      </div>
+      <div class="actions">
+        <span class="live"><i></i>LIVE</span>
+        <button>PAUSE FEED</button>
+        <button>EXPORT CSV</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>TIMESTAMP</th>
+            <th>PROTOCOL</th>
+            <th>SOURCE IP</th>
+            <th>DIRECTION</th>
+            <th>DESTINATION IP</th>
+            <th>PORT</th>
+            <th class="right">SIZE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>14:22:05.001</td>
+            <td><span class="pill tcp">TCP</span></td>
+            <td>192.168.1.12</td>
+            <td>→</td>
+            <td>104.22.41.229</td>
+            <td>443</td>
+            <td class="right">1.2 KB</td>
+          </tr>
+          <tr>
+            <td>14:22:05.142</td>
+            <td><span class="pill udp">UDP</span></td>
+            <td>192.168.1.5</td>
+            <td>→</td>
+            <td>8.8.8.8</td>
+            <td>53</td>
+            <td class="right">64 B</td>
+          </tr>
+          <tr class="susp">
+            <td>14:22:05.289</td>
+            <td><span class="pill susp">SUSPICIOUS</span></td>
+            <td>45.227.253.12</td>
+            <td>⚠</td>
+            <td>192.168.1.254</td>
+            <td>22</td>
+            <td class="right">420 B</td>
+          </tr>
+          <tr>
+            <td>14:22:05.301</td>
+            <td><span class="pill tcp">TCP</span></td>
+            <td>192.168.1.12</td>
+            <td>→</td>
+            <td>172.217.16.206</td>
+            <td>443</td>
+            <td class="right">2.5 KB</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="glass card distribution">
+    <div class="dist-head">
+      <div>
+        <h2>Traffic Distribution (24h)</h2>
+        <p>Aggregation of all network segments by activity volume.</p>
+      </div>
+      <button>Generate Report</button>
+    </div>
+
+    <div class="bars24">
+      <span style="--h: 40%"></span><span style="--h: 35%"></span><span style="--h: 30%"></span>
+      <span style="--h: 25%"></span><span class="hot" style="--h: 95%"></span
+      ><span style="--h: 45%"></span> <span style="--h: 50%"></span><span style="--h: 55%"></span
+      ><span style="--h: 60%"></span> <span style="--h: 65%"></span
+      ><span class="hot" style="--h: 80%"></span><span style="--h: 55%"></span>
+      <span style="--h: 45%"></span><span style="--h: 40%"></span><span style="--h: 35%"></span>
+      <span style="--h: 30%"></span><span style="--h: 25%"></span><span style="--h: 20%"></span>
+      <span style="--h: 25%"></span><span style="--h: 30%"></span><span style="--h: 40%"></span>
+      <span style="--h: 50%"></span><span style="--h: 60%"></span><span style="--h: 70%"></span>
+    </div>
+  </section>
+</div>

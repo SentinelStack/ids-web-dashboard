@@ -1,0 +1,97 @@
+<section class="auth-page">
+  <div class="bg-glow" aria-hidden="true"></div>
+
+  <main class="auth-wrap">
+    <header class="auth-head">
+      <h1>AEGIS IDS</h1>
+      <p>Secure Authentication Gateway</p>
+    </header>
+
+    <article class="auth-card">
+      <div class="accent"></div>
+
+      <div class="tabs">
+        <button [class.active]="activeTab === 'login'" type="button" (click)="activeTab = 'login'">
+          Login
+        </button>
+        <button
+          [class.active]="activeTab === 'register'"
+          type="button"
+          (click)="activeTab = 'register'"
+        >
+          Register
+        </button>
+      </div>
+
+      @if (activeTab === 'login') {
+        <form class="form" novalidate>
+          <label for="identifier">Operator ID / Email</label>
+          <div class="field">
+            <span class="material-symbols-outlined">person</span>
+            <input id="identifier" type="text" placeholder="Enter credentials" />
+          </div>
+
+          <label for="passkey">Security Passkey</label>
+          <div class="field">
+            <span class="material-symbols-outlined">lock</span>
+            <input id="passkey" type="password" placeholder="••••••••••••" />
+          </div>
+
+          <div class="row">
+            <label class="check">
+              <input type="checkbox" />
+              <span>Maintain Connection</span>
+            </label>
+            <a href="#">Reset Passkey?</a>
+          </div>
+
+          <button class="primary" routerLink="/app/dashboard" type="button">
+            <span class="material-symbols-outlined">power_settings_new</span>
+            Initialize Session
+          </button>
+        </form>
+      } @else {
+        <form class="form" novalidate>
+          <label for="operator">Operator Name</label>
+          <div class="field">
+            <span class="material-symbols-outlined">badge</span>
+            <input id="operator" type="text" placeholder="Agent username" />
+          </div>
+
+          <label for="reg-email">Email</label>
+          <div class="field">
+            <span class="material-symbols-outlined">mail</span>
+            <input id="reg-email" type="email" placeholder="name@aegis.local" />
+          </div>
+
+          <label for="reg-pass">Create Passkey</label>
+          <div class="field">
+            <span class="material-symbols-outlined">vpn_key</span>
+            <input id="reg-pass" type="password" placeholder="Minimum 12 chars" />
+          </div>
+
+          <button class="primary" type="button">
+            <span class="material-symbols-outlined">how_to_reg</span>
+            Register Operator
+          </button>
+        </form>
+      }
+
+      <div class="divider"><span>Alternative Auth</span></div>
+
+      <div class="social">
+        <button type="button">
+          <span class="material-symbols-outlined">account_circle</span>Google ID
+        </button>
+        <button type="button">
+          <span class="material-symbols-outlined">public</span>Federated
+        </button>
+      </div>
+    </article>
+  </main>
+
+  <footer>
+    <span class="dot"></span>
+    <span>Encrypted Connection Established</span>
+  </footer>
+</section>
