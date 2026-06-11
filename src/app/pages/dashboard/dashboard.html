@@ -7,7 +7,10 @@
 
     @for (a of liveAlerts; track $index) {
       <article class="alert {{ a.cls }}">
-        <div class="alert-top"><span class="tag">{{ a.tag }}</span><time>{{ a.time }}</time></div>
+        <div class="alert-top">
+          <span class="tag">{{ a.tag }}</span
+          ><time>{{ a.time }}</time>
+        </div>
         <h4>{{ a.title }}</h4>
         @for (line of a.lines; track $index) {
           <p>{{ line }}</p>
@@ -66,7 +69,10 @@
 
       @for (o of origins; track $index) {
         <div class="origin">
-          <div><span>{{ o.name }}</span><small>{{ o.pct }}%</small></div>
+          <div>
+            <span>{{ o.name }}</span
+            ><small>{{ o.pct }}%</small>
+          </div>
           <b [style.--w]="o.pct + '%'" class="{{ o.cls }}"></b>
         </div>
       }

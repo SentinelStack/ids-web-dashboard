@@ -73,7 +73,11 @@ export class DashboardPageComponent implements OnInit {
       const res = await firstValueFrom(
         this.api.get<PagedData>('/alerts?size=500&sortBy=timestamp&direction=desc'),
       );
-      this.totalAlerts = (res?.data?.totalElements ?? res?.data?.content?.length ?? 0).toLocaleString();
+      this.totalAlerts = (
+        res?.data?.totalElements ??
+        res?.data?.content?.length ??
+        0
+      ).toLocaleString();
       return res?.data?.content ?? [];
     } catch {
       return [];
@@ -165,7 +169,10 @@ export class DashboardPageComponent implements OnInit {
 
     const max = Math.max(1, ...buckets);
     const threshold = max * 0.75;
-    this.bars = buckets.map((v) => ({ h: Math.round((v / max) * 100), hot: v >= threshold && v > 0 }));
+    this.bars = buckets.map((v) => ({
+      h: Math.round((v / max) * 100),
+      hot: v >= threshold && v > 0,
+    }));
 
     if (previous > 0) {
       const delta = Math.round(((recent - previous) / previous) * 1000) / 10;
@@ -177,7 +184,9 @@ export class DashboardPageComponent implements OnInit {
 
   private async buildHealth(): Promise<void> {
     try {
-      const res = await firstValueFrom(this.api.get<PagedData & { content?: { status?: string }[] }>('/devices?size=200'));
+      const res = await firstValueFrom(
+        this.api.get<PagedData & { content?: { status?: string }[] }>('/devices?size=200'),
+      );
       const devices = (res?.data?.content ?? []) as { status?: string }[];
       if (devices.length === 0) {
         this.systemHealth = 'No devices';
@@ -197,7 +206,9 @@ export class DashboardPageComponent implements OnInit {
 
     for (const ip of ips) {
       const point = await this.geo.locate(ip);
-      const country = point?.isLocal ? 'Local network' : (point?.label.split(', ').pop() ?? 'Unknown');
+      const country = point?.isLocal
+        ? 'Local network'
+        : (point?.label.split(', ').pop() ?? 'Unknown');
       counts.set(country, (counts.get(country) ?? 0) + 1);
       total++;
     }
@@ -219,7 +230,11 @@ export class DashboardPageComponent implements OnInit {
     }));
 
     if (otherCount > 0) {
-      this.origins.push({ name: 'Other', pct: Math.round((otherCount / total) * 1000) / 10, cls: 'g' });
+      this.origins.push({
+        name: 'Other',
+        pct: Math.round((otherCount / total) * 1000) / 10,
+        cls: 'g',
+      });
     }
   }
 }
