@@ -31,7 +31,8 @@
               }
             ],
             "styles": ["node_modules/leaflet/dist/leaflet.css", "src/styles.scss"],
-            "allowedCommonJsDependencies": ["leaflet"]
+            "allowedCommonJsDependencies": ["leaflet"],
+            "polyfills": ["zone.js"]
           },
           "configurations": {
             "production": {
