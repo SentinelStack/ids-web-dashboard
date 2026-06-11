@@ -1,5 +1,3 @@
 export interface HealthStatus {
-  status: 'UP' | 'DOWN';
-  service: string;
-  checkedAt: string;
+  status: 'UP' | 'DOWN' | 'OUT_OF_SERVICE' | 'UNKNOWN';
 }

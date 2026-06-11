@@ -1,0 +1,110 @@
+:host {
+  display: block;
+  position: relative;
+}
+
+.threat-map-wrap {
+  position: relative;
+}
+
+.threat-map {
+  width: 100%;
+  height: 530px;
+  background: #0a0e14;
+}
+
+:host ::ng-deep .leaflet-container {
+  background: #0a0e14;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+:host ::ng-deep .threat-arc {
+  stroke-dasharray: 5 9;
+  animation: threat-dash 1.1s linear infinite;
+  filter: drop-shadow(0 0 3px currentColor);
+}
+
+@keyframes threat-dash {
+  to {
+    stroke-dashoffset: -28;
+  }
+}
+
+:host ::ng-deep .threat-device {
+  filter: drop-shadow(0 0 6px #29d8ff);
+  animation: threat-pulse 2s ease-in-out infinite;
+}
+
+@keyframes threat-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+:host ::ng-deep .threat-tip {
+  background: #0e141d;
+  border: 1px solid rgb(41 216 255 / 35%);
+  color: #cfe3ff;
+  font-size: 11px;
+  box-shadow: 0 0 12px rgb(0 0 0 / 50%);
+}
+
+:host ::ng-deep .threat-tip::before {
+  display: none;
+}
+
+.threat-legend {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 12px;
+  border: 1px solid rgb(164 230 255 / 16%);
+  border-radius: 8px;
+  background: rgb(10 14 20 / 80%);
+  backdrop-filter: blur(6px);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #93a5be;
+
+  .li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .dot.device {
+    background: #29d8ff;
+    box-shadow: 0 0 6px #29d8ff;
+  }
+
+  .dot.crit {
+    background: #ff4d6d;
+  }
+
+  .dot.med {
+    background: #c792ea;
+  }
+
+  .dot.low {
+    background: #29d8ff;
+  }
+
+  .count {
+    color: #6f829d;
+  }
+}

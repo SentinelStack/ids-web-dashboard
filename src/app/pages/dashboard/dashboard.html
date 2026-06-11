@@ -5,31 +5,19 @@
       <span class="pill">LIVE</span>
     </div>
 
-    <article class="alert critical">
-      <div class="alert-top"><span class="tag">CRITICAL</span><time>14:22:01</time></div>
-      <h4>SQL Injection Attempt</h4>
-      <p>SRC: 192.168.1.104</p>
-      <p>DST: DB_PROD_CLUSTER</p>
-    </article>
+    @for (a of liveAlerts; track $index) {
+      <article class="alert {{ a.cls }}">
+        <div class="alert-top"><span class="tag">{{ a.tag }}</span><time>{{ a.time }}</time></div>
+        <h4>{{ a.title }}</h4>
+        @for (line of a.lines; track $index) {
+          <p>{{ line }}</p>
+        }
+      </article>
+    }
 
-    <article class="alert warning">
-      <div class="alert-top"><span class="tag">WARNING</span><time>14:21:45</time></div>
-      <h4>Brute Force Detected</h4>
-      <p>SRC: 45.22.11.9</p>
-      <p>DST: SSH_GATEWAY</p>
-    </article>
-
-    <article class="alert info">
-      <div class="alert-top"><span class="tag">INFO</span><time>14:21:12</time></div>
-      <h4>New User Session</h4>
-      <p>USER: adm_jdoe</p>
-    </article>
-
-    <article class="alert critical">
-      <div class="alert-top"><span class="tag">CRITICAL</span><time>14:20:55</time></div>
-      <h4>DDoS Vector Identified</h4>
-      <p>TARGET: API_ENDPOINT_12</p>
-    </article>
+    @if (loaded && liveAlerts.length === 0) {
+      <p class="empty">No alerts yet.</p>
+    }
   </section>
 
   <section class="center-column">
@@ -38,27 +26,18 @@
         <h2>Global Threat Vectors</h2>
         <p>Real-time connection intercept</p>
       </div>
-      <img
-        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCaAkmyexiZSfuuh-xD55akytsabSXNN_fu2LGjQwzLC6HUU8SaxnkGUrNRakt7ggB3AdEq5StvSoEj_QgNPmFLm9dCL3sgrXS5zx9wLvX_KRuMUpTQAafOrFNrhEyQ12-VomhcK-IYa3FJz8GyBWdaAY4ECw5uzh43mjVEff1Vc1GDf8zlgiZ-NIQYdVyPhTnAI_GNTJ9B4BlAOudV37AokbXusc84nOGMxFDD2DNzPeXP24XA5B8jpNC9sfgbVL9HAhsV7kkPhIc"
-        alt="Threat map"
-      />
+      <app-threat-map></app-threat-map>
     </div>
 
     <div class="volume card">
       <div class="volume-head">
         <h3>Threat Volume (24h)</h3>
-        <span>+12.4% vs Yesterday</span>
+        <span>{{ volumeDelta }}</span>
       </div>
       <div class="bars">
-        <span style="--h: 32%"></span><span style="--h: 28%"></span><span style="--h: 45%"></span>
-        <span style="--h: 52%"></span><span class="hot" style="--h: 74%"></span
-        ><span style="--h: 60%"></span> <span style="--h: 55%"></span><span style="--h: 48%"></span
-        ><span style="--h: 40%"></span> <span style="--h: 44%"></span><span style="--h: 58%"></span
-        ><span class="hot" style="--h: 70%"></span> <span style="--h: 34%"></span
-        ><span style="--h: 24%"></span><span style="--h: 36%"></span> <span style="--h: 50%"></span
-        ><span style="--h: 32%"></span><span style="--h: 44%"></span> <span style="--h: 61%"></span
-        ><span style="--h: 31%"></span><span style="--h: 43%"></span>
-        <span style="--h: 56%"></span>
+        @for (bar of bars; track $index) {
+          <span [class.hot]="bar.hot" [style.--h]="bar.h + '%'"></span>
+        }
       </div>
       <div class="ticks">
         <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:59</span>
@@ -68,43 +47,33 @@
 
   <section class="right-column">
     <div class="kpi card">
-      <h4>Total Threats Blocked</h4>
-      <p>142,892 <span class="material-symbols-outlined">shield</span></p>
+      <h4>Total Alerts</h4>
+      <p>{{ totalAlerts }} <span class="material-symbols-outlined">shield</span></p>
     </div>
 
     <div class="kpi card danger">
-      <h4>Blocked IPs</h4>
-      <p>1,402 <span class="material-symbols-outlined">block</span></p>
+      <h4>Unique Source IPs</h4>
+      <p>{{ sourceIps }} <span class="material-symbols-outlined">block</span></p>
     </div>
 
     <div class="kpi card secondary">
       <h4>System Health</h4>
-      <p>99.98% <span class="dot"></span></p>
+      <p>{{ systemHealth }} <span class="dot"></span></p>
     </div>
 
     <div class="origins card">
       <h3>TOP ATTACK ORIGINS</h3>
 
-      <div class="origin">
-        <div><span>Russian Federation</span><small>28.4%</small></div>
-        <b style="--w: 28.4%" class="r"></b>
-      </div>
-      <div class="origin">
-        <div><span>People's Republic of China</span><small>22.1%</small></div>
-        <b style="--w: 22.1%" class="p"></b>
-      </div>
-      <div class="origin">
-        <div><span>Brazil</span><small>14.8%</small></div>
-        <b style="--w: 14.8%" class="c"></b>
-      </div>
-      <div class="origin">
-        <div><span>United States</span><small>9.2%</small></div>
-        <b style="--w: 9.2%" class="c2"></b>
-      </div>
-      <div class="origin">
-        <div><span>Other</span><small>25.5%</small></div>
-        <b style="--w: 25.5%" class="g"></b>
-      </div>
+      @for (o of origins; track $index) {
+        <div class="origin">
+          <div><span>{{ o.name }}</span><small>{{ o.pct }}%</small></div>
+          <b [style.--w]="o.pct + '%'" class="{{ o.cls }}"></b>
+        </div>
+      }
+
+      @if (loaded && origins.length === 0) {
+        <p class="empty">No source data yet.</p>
+      }
     </div>
   </section>
 </div>
