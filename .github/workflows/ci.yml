@@ -115,7 +115,7 @@ jobs:
           SSH_HOST: ${{ secrets.QA_SSH_HOST }}
           SSH_USER: ${{ secrets.QA_SSH_USER }}
           SSH_PRIVATE_KEY: ${{ secrets.QA_SSH_PRIVATE_KEY }}
-          WEB_ROOT: /var/www/qa-dashboard.puk3p.online
+          WEB_ROOT: /var/www/sentinel.puk3p.online
         run: |
           set -euo pipefail
 
