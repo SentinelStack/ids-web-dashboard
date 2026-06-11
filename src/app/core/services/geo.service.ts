@@ -50,7 +50,10 @@ export class GeoService {
     }
 
     try {
-      const res = await firstValueFrom(this.http.get<IpWhoIsResponse>(`https://ipwho.is/${ip}`));
+      // Same-origin proxy (nginx forwards to ipwho.is server-side); calling
+      // ipwho.is directly from the browser is rejected with 403.
+      const base = typeof window !== 'undefined' ? window.location.origin : '';
+      const res = await firstValueFrom(this.http.get<IpWhoIsResponse>(`${base}/geo/${ip}`));
       if (res?.success && typeof res.latitude === 'number' && typeof res.longitude === 'number') {
         const point: GeoPoint = {
           lat: res.latitude,
