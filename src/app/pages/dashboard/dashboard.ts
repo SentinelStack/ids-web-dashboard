@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { ApiService } from '../../core/services/api.service';
@@ -44,7 +44,10 @@ interface BarVM {
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })
-export class DashboardPageComponent implements OnInit {
+export class DashboardPageComponent implements OnInit, OnDestroy {
+  private static readonly REFRESH_MS = 15000;
+  private timer?: ReturnType<typeof setInterval>;
+
   private readonly api = inject(ApiService);
   private readonly geo = inject(GeoService);
 
@@ -59,6 +62,17 @@ export class DashboardPageComponent implements OnInit {
   loaded = false;
 
   async ngOnInit(): Promise<void> {
+    await this.refresh();
+    this.timer = setInterval(() => void this.refresh(), DashboardPageComponent.REFRESH_MS);
+  }
+
+  ngOnDestroy(): void {
+    if (this.timer) {
+      clearInterval(this.timer);
+    }
+  }
+
+  private async refresh(): Promise<void> {
     const alerts = await this.fetchAlerts();
     this.buildLiveAlerts(alerts);
     this.buildKpis(alerts);
