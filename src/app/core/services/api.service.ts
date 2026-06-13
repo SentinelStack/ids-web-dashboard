@@ -22,6 +22,10 @@ export class ApiService {
     return this.http.put<ApiResponse<TResponse>>(path, body);
   }
 
+  patch<TBody, TResponse>(path: string, body: TBody): Observable<ApiResponse<TResponse>> {
+    return this.http.patch<ApiResponse<TResponse>>(path, body);
+  }
+
   delete<T>(path: string): Observable<ApiResponse<T>> {
     return this.http.delete<ApiResponse<T>>(path);
   }

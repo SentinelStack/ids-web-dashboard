@@ -17,6 +17,13 @@
         >
           Network Analysis
         </a>
+        <a
+          routerLink="/app/incidents"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          Incidents
+        </a>
         <a>Forensics</a>
       </nav>
     </div>
@@ -62,7 +69,13 @@
         >
           <span class="material-symbols-outlined">swap_calls</span>Traffic
         </a>
-        <a><span class="material-symbols-outlined">security</span>Incidents</a>
+        <a
+          routerLink="/app/incidents"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          <span class="material-symbols-outlined">security</span>Incidents
+        </a>
         <a><span class="material-symbols-outlined">hub</span>Topology</a>
         <a><span class="material-symbols-outlined">gavel</span>Rules</a>
       </nav>

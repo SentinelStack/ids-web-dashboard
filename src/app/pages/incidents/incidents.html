@@ -1,0 +1,314 @@
+<div class="incidents-page">
+  <div class="page-head">
+    <div>
+      <h1>Incident Response Center</h1>
+      <p>Monitor, triage and investigate detected network security incidents in real time.</p>
+    </div>
+    <div class="head-actions">
+      <button class="btn ghost">
+        <span class="material-symbols-outlined">file_download</span>Export Report
+      </button>
+      <button class="btn primary">
+        <span class="material-symbols-outlined">add</span>Manual Entry
+      </button>
+    </div>
+  </div>
+
+  @if (loaded) {
+    <div class="kpi-grid fade-in">
+      <div class="kpi card edge-primary">
+        <span class="label">Open Incidents</span>
+        <div class="val">
+          <strong class="c-primary">{{ kpiOpen }}</strong
+          ><em class="c-primary">{{ kpiOpenDelta }}</em>
+        </div>
+      </div>
+      <div class="kpi card edge-error">
+        <span class="label">Critical Severity</span>
+        <div class="val">
+          <strong class="c-error">{{ kpiCritical }}</strong
+          ><em>Urgent</em>
+        </div>
+      </div>
+      <div class="kpi card edge-secondary">
+        <span class="label">Under Investigation</span>
+        <div class="val">
+          <strong class="c-secondary">{{ kpiInvestigating }}</strong
+          ><em>Active Triage</em>
+        </div>
+      </div>
+      <div class="kpi card edge-dim">
+        <span class="label">Resolved</span>
+        <div class="val">
+          <strong class="c-dim">{{ kpiResolved }}</strong
+          ><em>Acknowledged</em>
+        </div>
+      </div>
+      <div class="kpi card edge-outline">
+        <span class="label">Unique Sources</span>
+        <div class="val">
+          <strong>{{ kpiSources }}</strong
+          ><em>Distinct IPs</em>
+        </div>
+      </div>
+    </div>
+
+    <div class="body-grid fade-in">
+      <div class="left-col">
+        <div class="timeline-card card">
+          <div class="card-head">
+            <span class="cap"
+              ><span class="material-symbols-outlined">insights</span>Incident Timeline (24h)</span
+            >
+            <div class="legend">
+              <span><i class="d-crit"></i>CRITICAL</span>
+              <span><i class="d-warn"></i>WARNING</span>
+              <span><i class="d-info"></i>INFO</span>
+            </div>
+          </div>
+          <div class="timeline-bars">
+            @for (b of timeline; track $index) {
+              <span class="bar {{ b.cls }}" [style.--h]="b.h + '%'"></span>
+            }
+          </div>
+          <div class="timeline-ticks">
+            <span>00:00</span><span>06:00</span><span>12:00</span><span class="now">NOW</span
+            ><span>18:00</span><span>23:59</span>
+          </div>
+        </div>
+
+        <div class="queue-card card">
+          <div class="queue-head">
+            <h3 class="cap"><span class="live-dot"></span>Live Incident Queue</h3>
+            <div class="tabs">
+              <button [class.on]="filter === 'all'" (click)="setFilter('all')">All</button>
+              <button [class.on]="filter === 'critical'" (click)="setFilter('critical')">
+                Critical
+              </button>
+              <button [class.on]="filter === 'pending'" (click)="setFilter('pending')">
+                Pending
+              </button>
+            </div>
+            <label class="filter">
+              <span class="material-symbols-outlined">filter_list</span>
+              <input
+                type="text"
+                placeholder="Filter queue…"
+                (input)="onFilterText($any($event.target).value)"
+              />
+            </label>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Severity</th>
+                  <th>Incident</th>
+                  <th>Source / Target</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Assignee</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of rows; track r.id) {
+                  <tr
+                    class="sev-{{ r.sevCls }}"
+                    [class.selected]="selected?.id === r.id"
+                    [class.muted]="r.acknowledged"
+                    (click)="select(r)"
+                  >
+                    <td class="mono">{{ r.time }}</td>
+                    <td>
+                      <span class="sev-badge {{ r.sevCls }}">{{ r.severity }}</span>
+                    </td>
+                    <td class="title">{{ r.title }}</td>
+                    <td class="mono st">
+                      <div class="src">{{ r.source }}</div>
+                      <div class="tgt">{{ r.target }}</div>
+                    </td>
+                    <td class="type">{{ r.category }}</td>
+                    <td>
+                      <span class="status {{ r.statusCls }}">
+                        <span class="material-symbols-outlined">{{ r.statusIcon }}</span
+                        >{{ r.status }}
+                      </span>
+                    </td>
+                    <td class="assignee">{{ r.assignee }}</td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="7" class="empty">No incidents match this filter.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="right-col">
+        @if (selected) {
+          <div class="inspector card">
+            <div class="insp-top">
+              <span class="mono inc-id">{{ selected.incId }}</span>
+              <span class="status {{ selected.statusCls }} pillish">
+                <span class="material-symbols-outlined">{{ selected.statusIcon }}</span
+                >{{ selected.status }}
+              </span>
+            </div>
+            <h2>{{ selected.title }}</h2>
+            <p class="insp-sub">Source: {{ selected.source }} · {{ selected.category }}</p>
+
+            <div class="insp-metrics">
+              <div class="m">
+                <span class="cap">Confidence</span>
+                <strong class="c-primary">{{ confidence }}%</strong>
+              </div>
+              <div class="m">
+                <span class="cap">Anomaly Score</span>
+                <strong class="c-error">{{ anomaly }}</strong>
+              </div>
+            </div>
+
+            <div class="signature">
+              <h4 class="cap">
+                <span class="material-symbols-outlined">fingerprint</span>Attack Signature
+              </h4>
+              <ul>
+                <li>
+                  <span>Packet Rate</span><b class="c-error">{{ packetRate }}</b>
+                </li>
+                <li>
+                  <span>Volume</span><b class="c-primary">{{ bytes }}</b>
+                </li>
+                <li>
+                  <span>Target Port</span><b class="mono">{{ selected.raw.destinationPort }}</b>
+                </li>
+                <li>
+                  <span>Protocol</span><b class="mono">{{ selected.raw.protocol }}</b>
+                </li>
+              </ul>
+            </div>
+
+            <div class="actions">
+              <div class="row2">
+                <button
+                  class="act"
+                  [disabled]="selected.acknowledged || acknowledging"
+                  (click)="acknowledge()"
+                >
+                  {{
+                    selected.acknowledged
+                      ? 'ACKNOWLEDGED'
+                      : acknowledging
+                        ? 'WORKING…'
+                        : 'ACKNOWLEDGE'
+                  }}
+                </button>
+                <button class="act">ASSIGN ANALYST</button>
+              </div>
+              <button class="act danger">CONTAIN TRAFFIC</button>
+              <button class="act solid">OPEN FORENSICS</button>
+            </div>
+          </div>
+        }
+
+        <div class="sev-card card">
+          <h4 class="cap">Severity Distribution</h4>
+          <div class="sev-body">
+            <div class="donut">
+              <svg viewBox="0 0 36 36">
+                <circle class="track" cx="18" cy="18" r="16" fill="none" stroke-width="3"></circle>
+                @for (s of donut; track $index) {
+                  <circle
+                    class="seg {{ s.cls }}"
+                    cx="18"
+                    cy="18"
+                    r="16"
+                    fill="none"
+                    stroke-width="3"
+                    [attr.stroke-dasharray]="s.dash"
+                    [attr.stroke-dashoffset]="s.offset"
+                  ></circle>
+                }
+              </svg>
+              <div class="donut-total">{{ sevTotal }}</div>
+            </div>
+            <div class="sev-legend">
+              <div>
+                <span><i class="d-crit"></i>Critical</span><b>{{ sevCritical }}</b>
+              </div>
+              <div>
+                <span><i class="d-high"></i>High</span><b>{{ sevHigh }}</b>
+              </div>
+              <div>
+                <span><i class="d-warn"></i>Medium</span><b>{{ sevMedium }}</b>
+              </div>
+              <div>
+                <span><i class="d-info"></i>Low</span><b>{{ sevLow }}</b>
+              </div>
+            </div>
+          </div>
+
+          <h4 class="cap divider">Top Affected Assets</h4>
+          <div class="assets">
+            @for (asset of assets; track asset.ip) {
+              <div class="asset">
+                <span class="material-symbols-outlined {{ asset.cls }}">{{ asset.icon }}</span>
+                <div class="meta">
+                  <p>{{ asset.name }}</p>
+                  <small class="mono">{{ asset.ip }}</small>
+                </div>
+                <span class="material-symbols-outlined chev">arrow_forward_ios</span>
+              </div>
+            } @empty {
+              <p class="empty">No targeted assets yet.</p>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <div class="kpi-grid">
+      @for (i of [0, 1, 2, 3, 4]; track i) {
+        <div class="kpi card">
+          <app-skeleton w="60%" h="11px" />
+          <app-skeleton w="40%" h="26px" />
+        </div>
+      }
+    </div>
+    <div class="body-grid">
+      <div class="left-col">
+        <div class="timeline-card card">
+          <app-skeleton w="45%" h="12px" />
+          <app-skeleton w="100%" h="150px" radius="10px" />
+        </div>
+        <div
+          class="queue-card card"
+          style="padding: 16px; display: flex; flex-direction: column; gap: 12px"
+        >
+          <app-skeleton w="35%" h="13px" />
+          @for (i of [0, 1, 2, 3, 4, 5]; track i) {
+            <app-skeleton w="100%" h="34px" />
+          }
+        </div>
+      </div>
+      <div class="right-col">
+        <div class="inspector card" style="display: flex; flex-direction: column; gap: 14px">
+          <app-skeleton w="55%" h="14px" />
+          <app-skeleton w="80%" h="24px" />
+          <app-skeleton w="100%" h="70px" />
+          <app-skeleton w="100%" h="140px" />
+          <app-skeleton w="100%" h="40px" />
+        </div>
+        <div class="sev-card card" style="display: flex; flex-direction: column; gap: 14px">
+          <app-skeleton w="50%" h="12px" />
+          <app-skeleton w="100%" h="120px" />
+        </div>
+      </div>
+    </div>
+  }
+</div>
