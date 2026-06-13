@@ -29,4 +29,9 @@ export class ApiService {
   delete<T>(path: string): Observable<ApiResponse<T>> {
     return this.http.delete<ApiResponse<T>>(path);
   }
+
+  /** GET a raw binary payload (e.g. a CSV/PDF file) for download. */
+  getBlob(path: string): Observable<Blob> {
+    return this.http.get(path, { responseType: 'blob' });
+  }
 }

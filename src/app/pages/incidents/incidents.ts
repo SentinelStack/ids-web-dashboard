@@ -122,6 +122,7 @@ export class IncidentsPageComponent implements OnInit, OnDestroy {
   acknowledging = false;
   assigning = false;
   containing = false;
+  exporting = false;
 
   // analyst assignment dropdown
   analysts: string[] = [];
@@ -361,6 +362,28 @@ export class IncidentsPageComponent implements OnInit, OnDestroy {
 
   closeForensics(): void {
     this.forensicsOpen = false;
+  }
+
+  async exportReport(): Promise<void> {
+    if (this.exporting) {
+      return;
+    }
+    this.exporting = true;
+    try {
+      const blob = await firstValueFrom(this.api.getBlob('/console/incidents/export'));
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `sentinel-incidents-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      // ignore — surfaced by the disabled state resetting
+    } finally {
+      this.exporting = false;
+    }
   }
 
   private applyKpis(k: IncidentsViewDto['kpis']): void {
