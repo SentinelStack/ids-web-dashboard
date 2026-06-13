@@ -1,21 +1,33 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, inject } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  Input,
+  OnChanges,
+  OnDestroy,
+  ViewChild,
+} from '@angular/core';
 import * as L from 'leaflet';
-import { firstValueFrom } from 'rxjs';
 
-import { ApiService } from '../../../core/services/api.service';
-import { GeoPoint, GeoService } from '../../../core/services/geo.service';
-
-interface AlertItem {
-  alertId?: string;
-  type?: string;
-  severity?: string;
-  sourceIp?: string;
-  destinationIp?: string;
+/** Pre-geolocated threat arc, computed server-side by the backend console view. */
+export interface ThreatArc {
+  lat: number;
+  lng: number;
+  sourceIp: string;
+  country: string;
+  level: string;
 }
 
-interface PagedContent {
-  content?: AlertItem[];
+interface LatLng {
+  lat: number;
+  lng: number;
 }
+
+const ARC_COLOR: Record<string, string> = {
+  critical: '#ff4d6d',
+  medium: '#c792ea',
+  low: '#29d8ff',
+};
 
 @Component({
   selector: 'app-threat-map',
@@ -23,28 +35,32 @@ interface PagedContent {
   templateUrl: './threat-map.html',
   styleUrl: './threat-map.scss',
 })
-export class ThreatMapComponent implements AfterViewInit, OnDestroy {
+export class ThreatMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   @ViewChild('mapEl', { static: true }) mapEl!: ElementRef<HTMLDivElement>;
 
-  private readonly api = inject(ApiService);
-  private readonly geo = inject(GeoService);
+  @Input() arcs: ThreatArc[] = [];
+  @Input() deviceLat = 0;
+  @Input() deviceLng = 0;
 
   private map?: L.Map;
   private layer?: L.LayerGroup;
-  private timer?: ReturnType<typeof setInterval>;
+  private ready = false;
 
-  stats = { sources: 0, arcs: 0, local: 0 };
+  stats = { sources: 0, arcs: 0 };
 
   ngAfterViewInit(): void {
     this.initMap();
-    void this.refresh();
-    this.timer = setInterval(() => void this.refresh(), 30000);
+    this.ready = true;
+    this.draw();
+  }
+
+  ngOnChanges(): void {
+    if (this.ready) {
+      this.draw();
+    }
   }
 
   ngOnDestroy(): void {
-    if (this.timer) {
-      clearInterval(this.timer);
-    }
     this.map?.remove();
   }
 
@@ -69,20 +85,7 @@ export class ThreatMapComponent implements AfterViewInit, OnDestroy {
     setTimeout(() => this.map?.invalidateSize(), 0);
   }
 
-  private severityColor(severity?: string): string {
-    switch ((severity ?? '').toUpperCase()) {
-      case 'CRITICAL':
-        return '#ff4d6d';
-      case 'HIGH':
-        return '#ff7a45';
-      case 'MEDIUM':
-        return '#c792ea';
-      default:
-        return '#29d8ff';
-    }
-  }
-
-  private arcPoints(from: GeoPoint, to: GeoPoint, bend = 0.25): L.LatLngExpression[] {
+  private arcPoints(from: LatLng, to: LatLng, bend = 0.25): L.LatLngExpression[] {
     const x0 = from.lng;
     const y0 = from.lat;
     const x2 = to.lng;
@@ -104,87 +107,50 @@ export class ThreatMapComponent implements AfterViewInit, OnDestroy {
     return points;
   }
 
-  private async refresh(): Promise<void> {
+  private draw(): void {
     if (!this.map || !this.layer) {
       return;
     }
-
-    let alerts: AlertItem[] = [];
-    try {
-      const res = await firstValueFrom(
-        this.api.get<PagedContent>('/alerts?size=200&sortBy=timestamp&direction=desc'),
-      );
-      alerts = res?.data?.content ?? [];
-    } catch {
-      alerts = [];
-    }
-
     this.layer.clearLayers();
-    this.addDevice();
+    const device: LatLng = { lat: this.deviceLat, lng: this.deviceLng };
+    this.addDevice(device);
 
     const seenSources = new Set<string>();
-    let arcs = 0;
-    let local = 0;
+    for (const arc of this.arcs) {
+      const color = ARC_COLOR[arc.level] ?? '#29d8ff';
+      const src: LatLng = { lat: arc.lat, lng: arc.lng };
 
-    for (const alert of alerts) {
-      const src = alert.sourceIp;
-      const dst = alert.destinationIp;
-      if (!src || !dst) {
-        continue;
-      }
-
-      const [sp, dp] = await Promise.all([this.geo.locate(src), this.geo.locate(dst)]);
-      if (!sp || !dp) {
-        continue;
-      }
-      if (sp.isLocal && dp.isLocal) {
-        local++;
-        continue;
-      }
-
-      const color = this.severityColor(alert.severity);
-
-      L.polyline(this.arcPoints(sp, dp), {
+      L.polyline(this.arcPoints(src, device), {
         color,
         weight: 1.5,
         opacity: 0.75,
         className: 'threat-arc',
       }).addTo(this.layer);
 
-      if (!seenSources.has(src)) {
-        seenSources.add(src);
-        L.circleMarker([sp.lat, sp.lng], {
+      if (!seenSources.has(arc.sourceIp)) {
+        seenSources.add(arc.sourceIp);
+        L.circleMarker([src.lat, src.lng], {
           radius: 4,
           color,
           weight: 1,
           fillColor: color,
           fillOpacity: 0.9,
         })
-          .bindTooltip(`${src} → ${dst}<br>${alert.type ?? ''} · ${alert.severity ?? ''}`, {
+          .bindTooltip(`${arc.sourceIp}<br>${arc.country} · ${arc.level}`, {
             className: 'threat-tip',
           })
           .addTo(this.layer);
       }
-
-      L.circleMarker([dp.lat, dp.lng], {
-        radius: 2.5,
-        weight: 0,
-        fillColor: '#7fefff',
-        fillOpacity: 0.6,
-      }).addTo(this.layer);
-
-      arcs++;
     }
 
-    this.stats = { sources: seenSources.size, arcs, local };
+    this.stats = { sources: seenSources.size, arcs: this.arcs.length };
   }
 
-  private addDevice(): void {
-    if (!this.layer) {
+  private addDevice(device: LatLng): void {
+    if (!this.layer || (device.lat === 0 && device.lng === 0)) {
       return;
     }
-    const d = this.geo.deviceLocation;
-    L.circleMarker([d.lat, d.lng], {
+    L.circleMarker([device.lat, device.lng], {
       radius: 6,
       color: '#29d8ff',
       weight: 2,

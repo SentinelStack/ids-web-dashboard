@@ -30,7 +30,11 @@
           <h2>Global Threat Vectors</h2>
           <p>Real-time connection intercept</p>
         </div>
-        <app-threat-map></app-threat-map>
+        <app-threat-map
+          [arcs]="arcs"
+          [deviceLat]="deviceLat"
+          [deviceLng]="deviceLng"
+        ></app-threat-map>
       </div>
 
       <div class="volume card">
