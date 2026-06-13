@@ -117,7 +117,11 @@ export class ReportsPageComponent implements OnInit {
 
   private async fetchCurated(): Promise<CuratedReport[]> {
     try {
-      return (await firstValueFrom(this.api.get<CuratedReport[]>('/reports/curated'))).data ?? [];
+      // HATEOAS CollectionModel — the reports are under data.content.
+      const res = await firstValueFrom(
+        this.api.get<{ content: CuratedReport[] }>('/reports/curated'),
+      );
+      return res.data?.content ?? [];
     } catch {
       return [];
     }

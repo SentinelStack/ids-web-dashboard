@@ -185,8 +185,9 @@ export class IncidentsPageComponent implements OnInit, OnDestroy {
 
   private async fetchAnalysts(): Promise<void> {
     try {
-      const res = await firstValueFrom(this.api.get<string[]>('/alerts/analysts'));
-      this.analysts = res?.data ?? [];
+      // HATEOAS CollectionModel — the roster is under data.content.
+      const res = await firstValueFrom(this.api.get<{ content: string[] }>('/alerts/analysts'));
+      this.analysts = res?.data?.content ?? [];
     } catch {
       this.analysts = [];
     }
