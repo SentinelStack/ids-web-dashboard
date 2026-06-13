@@ -208,19 +208,42 @@
                         : 'ACKNOWLEDGE'
                   }}
                 </button>
-                <button
-                  class="act"
-                  [disabled]="selected.acknowledged || assigning"
-                  (click)="assign()"
-                >
-                  {{
-                    assigning
-                      ? 'WORKING…'
-                      : selected.assignee !== 'Unassigned' && selected.assignee !== 'System'
-                        ? selected.assignee.toUpperCase()
-                        : 'ASSIGN ANALYST'
-                  }}
-                </button>
+                <div class="assign-wrap">
+                  <button
+                    class="act"
+                    [class.on]="assignOpen"
+                    [disabled]="selected.acknowledged || assigning"
+                    (click)="toggleAssign()"
+                  >
+                    <span class="lbl">{{
+                      assigning
+                        ? 'WORKING…'
+                        : selected.assignee !== 'Unassigned' && selected.assignee !== 'System'
+                          ? selected.assignee
+                          : 'ASSIGN ANALYST'
+                    }}</span>
+                    <span class="material-symbols-outlined caret">expand_more</span>
+                  </button>
+                  @if (assignOpen) {
+                    <div class="assign-backdrop" (click)="closeAssign()"></div>
+                    <div class="assign-menu">
+                      @for (a of analysts; track a) {
+                        <button
+                          class="assign-item"
+                          [class.active]="a === selected.assignee"
+                          (click)="assign(a)"
+                        >
+                          <span class="material-symbols-outlined">{{
+                            a === selected.assignee ? 'check' : 'person'
+                          }}</span
+                          >{{ a }}
+                        </button>
+                      } @empty {
+                        <div class="assign-empty">No analysts available</div>
+                      }
+                    </div>
+                  }
+                </div>
               </div>
               <button
                 class="act danger"

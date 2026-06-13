@@ -123,6 +123,10 @@ export class IncidentsPageComponent implements OnInit, OnDestroy {
   assigning = false;
   containing = false;
 
+  // analyst assignment dropdown
+  analysts: string[] = [];
+  assignOpen = false;
+
   // forensics drawer
   forensicsOpen = false;
   forensicsLoading = false;
@@ -174,8 +178,17 @@ export class IncidentsPageComponent implements OnInit, OnDestroy {
   assets: AssetVM[] = [];
 
   async ngOnInit(): Promise<void> {
-    await this.refresh();
+    await Promise.all([this.refresh(), this.fetchAnalysts()]);
     this.timer = setInterval(() => void this.refresh(), IncidentsPageComponent.REFRESH_MS);
+  }
+
+  private async fetchAnalysts(): Promise<void> {
+    try {
+      const res = await firstValueFrom(this.api.get<string[]>('/alerts/analysts'));
+      this.analysts = res?.data ?? [];
+    } catch {
+      this.analysts = [];
+    }
   }
 
   ngOnDestroy(): void {
@@ -234,6 +247,9 @@ export class IncidentsPageComponent implements OnInit, OnDestroy {
   }
 
   select(row: IncidentVM): void {
+    if (this.selected?.id !== row.id) {
+      this.assignOpen = false;
+    }
     this.selected = row;
     this.confidence = row.confidence;
     this.anomaly = row.anomaly;
@@ -261,14 +277,25 @@ export class IncidentsPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  async assign(): Promise<void> {
+  toggleAssign(): void {
+    if (this.selected && !this.selected.acknowledged && !this.assigning) {
+      this.assignOpen = !this.assignOpen;
+    }
+  }
+
+  closeAssign(): void {
+    this.assignOpen = false;
+  }
+
+  async assign(analyst: string): Promise<void> {
     const sel = this.selected;
     if (!sel || sel.acknowledged || this.assigning) {
       return;
     }
+    this.assignOpen = false;
     this.assigning = true;
     try {
-      await firstValueFrom(this.api.patch(`/alerts/${sel.id}/assign`, {}));
+      await firstValueFrom(this.api.patch(`/alerts/${sel.id}/assign`, { analyst }));
       await this.refresh();
     } catch {
       // ignore; next poll reflects state
@@ -356,8 +383,9 @@ export class IncidentsPageComponent implements OnInit, OnDestroy {
       return;
     }
     const top =
-      this.allRows.find((r) => r.severity === 'CRITICAL') ??
+      this.allRows.find((r) => r.severity === 'CRITICAL' && !r.acknowledged) ??
       this.allRows.find((r) => !r.acknowledged) ??
+      this.allRows.find((r) => r.severity === 'CRITICAL') ??
       this.allRows[0] ??
       null;
     if (top) {
