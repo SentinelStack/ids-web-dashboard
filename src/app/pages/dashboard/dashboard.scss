@@ -168,16 +168,23 @@
 }
 
 .bars {
+  // One equal column per bar (count-agnostic: 8 three-hour buckets today).
   display: grid;
-  grid-template-columns: repeat(22, 1fr);
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   align-items: end;
-  gap: 10px;
   height: 200px;
 
   span {
+    // Thin bar centred in its column → even spacing, not a wall of blocks.
+    width: 42%;
+    max-width: 26px;
+    justify-self: center;
+    min-height: 4px;
     height: var(--h);
     background: rgb(164 230 255 / 30%);
-    border-radius: 4px 4px 0 0;
+    border-radius: 3px 3px 0 0;
+    transition: height 0.35s ease;
   }
 
   .hot {
