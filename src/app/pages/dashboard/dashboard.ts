@@ -22,6 +22,11 @@ interface DashboardViewDto {
   deviceLng: number;
 }
 
+interface ThreatVolumeDto {
+  delta: string;
+  bars: { height: number; hot: boolean }[];
+}
+
 interface AlertVM {
   cls: string;
   tag: string;
@@ -111,6 +116,22 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
     this.deviceLng = view.deviceLng;
 
     this.loaded = true;
+    // Threat Volume comes from ClickHouse (full history) — the Mongo hot store
+    // only holds ~1h, so its 24h histogram would be a single bar.
+    await this.loadThreatVolume();
+  }
+
+  private async loadThreatVolume(): Promise<void> {
+    try {
+      const res = await this.hateoas.follow<ThreatVolumeDto>('threat-volume');
+      const v = res?.data;
+      if (v) {
+        this.bars = v.bars.map((b) => ({ h: b.height, hot: b.hot }));
+        this.volumeDelta = v.delta;
+      }
+    } catch {
+      // keep the console view's volume as a fallback
+    }
   }
 
   private async fetchView(): Promise<DashboardViewDto | null> {
