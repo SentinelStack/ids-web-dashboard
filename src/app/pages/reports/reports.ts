@@ -1,8 +1,8 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { firstValueFrom } from 'rxjs';
 
-import { ApiService } from '../../core/services/api.service';
+import { HalResource, linkHref } from '../../core/models/hateoas';
+import { HateoasService } from '../../core/services/hateoas.service';
 import { SkeletonComponent } from '../../core/skeleton/skeleton';
 
 interface FilterMeta {
@@ -27,6 +27,7 @@ interface CuratedReport {
   key: string;
   label: string;
   description: string;
+  downloadHref: string;
 }
 
 interface Filters {
@@ -80,7 +81,9 @@ const EMPTY_FILTERS: Filters = {
   styleUrl: './reports.scss',
 })
 export class ReportsPageComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  private readonly hateoas = inject(HateoasService);
+  // The reports meta resource carries the preview/download/curated links.
+  private metaLinks: HalResource | null = null;
 
   loaded = false;
   meta: FilterMeta | null = null;
@@ -95,33 +98,43 @@ export class ReportsPageComponent implements OnInit {
   curatedBusy: string | null = null;
 
   async ngOnInit(): Promise<void> {
-    const [meta, curated] = await Promise.all([this.fetchMeta(), this.fetchCurated()]);
-    this.meta = meta;
-    this.curated = curated;
-    if (meta?.dateRange.min) {
-      this.filters.from = meta.dateRange.min;
+    // Discover the reports resource from the index, then follow its links.
+    this.meta = await this.fetchMeta();
+    this.curated = await this.fetchCurated();
+    if (this.meta?.dateRange.min) {
+      this.filters.from = this.meta.dateRange.min;
     }
-    if (meta?.dateRange.max) {
-      this.filters.to = meta.dateRange.max;
+    if (this.meta?.dateRange.max) {
+      this.filters.to = this.meta.dateRange.max;
     }
     this.loaded = true;
   }
 
   private async fetchMeta(): Promise<FilterMeta | null> {
     try {
-      return (await firstValueFrom(this.api.get<FilterMeta>('/reports/meta'))).data ?? null;
+      const res = await this.hateoas.follow<FilterMeta & HalResource>('reports');
+      this.metaLinks = res?.data ?? null;
+      return res?.data ?? null;
     } catch {
+      this.metaLinks = null;
       return null;
     }
   }
 
   private async fetchCurated(): Promise<CuratedReport[]> {
+    const href = linkHref(this.metaLinks, 'curated');
+    if (!href) {
+      return [];
+    }
     try {
-      // HATEOAS CollectionModel — the reports are under data.content.
-      const res = await firstValueFrom(
-        this.api.get<{ content: CuratedReport[] }>('/reports/curated'),
-      );
-      return res.data?.content ?? [];
+      // CollectionModel of EntityModels — each item carries its own download link.
+      const res = await this.hateoas.followHref<{ content: (CuratedReport & HalResource)[] }>(href);
+      return (res.data?.content ?? []).map((item) => ({
+        key: item.key,
+        label: item.label,
+        description: item.description,
+        downloadHref: linkHref(item, 'download') ?? '',
+      }));
     } catch {
       return [];
     }
@@ -177,10 +190,11 @@ export class ReportsPageComponent implements OnInit {
     this.previewing = true;
     this.previewError = '';
     try {
-      const qs = this.queryString();
-      const res = await firstValueFrom(
-        this.api.get<PreviewResponse>(`/reports/alerts/preview?${qs}`),
-      );
+      const base = linkHref(this.metaLinks, 'preview');
+      if (!base) {
+        throw new Error('preview link unavailable');
+      }
+      const res = await this.hateoas.followHref<PreviewResponse>(`${base}?${this.queryString()}`);
       this.preview = res.data ?? null;
     } catch {
       this.preview = null;
@@ -196,24 +210,27 @@ export class ReportsPageComponent implements OnInit {
     }
     this.downloading = true;
     try {
-      const qs = this.queryString();
-      await this.streamDownload(
-        `/reports/alerts/download?${qs}&format=${format}`,
-        `sentinel-alerts.${format}`,
-      );
+      const base = linkHref(this.metaLinks, 'download');
+      if (base) {
+        await this.streamDownload(
+          `${base}?${this.queryString()}&format=${format}`,
+          `sentinel-alerts.${format}`,
+        );
+      }
     } finally {
       this.downloading = false;
     }
   }
 
   async downloadCurated(report: CuratedReport, format: 'csv' | 'json' = 'csv'): Promise<void> {
-    if (this.curatedBusy) {
+    if (this.curatedBusy || !report.downloadHref) {
       return;
     }
     this.curatedBusy = report.key;
     try {
+      // Follow the item's own download link.
       await this.streamDownload(
-        `/reports/curated/${report.key}/download?format=${format}`,
+        `${report.downloadHref}?format=${format}`,
         `sentinel-${report.key}.${format}`,
       );
     } finally {
@@ -221,9 +238,9 @@ export class ReportsPageComponent implements OnInit {
     }
   }
 
-  private async streamDownload(path: string, fallbackName: string): Promise<void> {
+  private async streamDownload(href: string, fallbackName: string): Promise<void> {
     try {
-      const blob = await firstValueFrom(this.api.getBlob(path));
+      const blob = await this.hateoas.downloadHref(href);
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

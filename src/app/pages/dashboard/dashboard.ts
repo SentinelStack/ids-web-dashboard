@@ -1,7 +1,6 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
 
-import { ApiService } from '../../core/services/api.service';
+import { HateoasService } from '../../core/services/hateoas.service';
 import { SkeletonComponent } from '../../core/skeleton/skeleton';
 import { ThreatArc, ThreatMapComponent } from './threat-map/threat-map';
 
@@ -54,7 +53,7 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
   private static readonly REFRESH_MS = 15000;
   private timer?: ReturnType<typeof setInterval>;
 
-  private readonly api = inject(ApiService);
+  private readonly hateoas = inject(HateoasService);
 
   liveAlerts: AlertVM[] = [];
   origins: OriginVM[] = [];
@@ -116,7 +115,7 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
 
   private async fetchView(): Promise<DashboardViewDto | null> {
     try {
-      const res = await firstValueFrom(this.api.get<DashboardViewDto>('/console/dashboard'));
+      const res = await this.hateoas.follow<DashboardViewDto>('console-dashboard');
       return res?.data ?? null;
     } catch {
       return null;

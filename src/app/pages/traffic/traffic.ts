@@ -1,7 +1,6 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
 
-import { ApiService } from '../../core/services/api.service';
+import { HateoasService } from '../../core/services/hateoas.service';
 import { SkeletonComponent } from '../../core/skeleton/skeleton';
 
 interface TrafficViewDto {
@@ -65,7 +64,7 @@ const PROTOCOL_CLS: Record<string, string> = { TCP: 'tcp', UDP: 'udp', ICMP: 'mu
 })
 export class TrafficPageComponent implements OnInit, OnDestroy {
   private static readonly REFRESH_MS = 15000;
-  private readonly api = inject(ApiService);
+  private readonly hateoas = inject(HateoasService);
   private timer?: ReturnType<typeof setInterval>;
 
   loaded = false;
@@ -137,7 +136,7 @@ export class TrafficPageComponent implements OnInit, OnDestroy {
 
   private async fetchView(): Promise<TrafficViewDto | null> {
     try {
-      const res = await firstValueFrom(this.api.get<TrafficViewDto>('/console/traffic'));
+      const res = await this.hateoas.follow<TrafficViewDto>('console-traffic');
       return res?.data ?? null;
     } catch {
       return null;

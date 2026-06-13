@@ -1,8 +1,9 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-import { HalResource, linkHref } from '../../core/models/hateoas';
+import { HalResource, expand, linkHref } from '../../core/models/hateoas';
 import { ApiService } from '../../core/services/api.service';
+import { HateoasService } from '../../core/services/hateoas.service';
 import { SkeletonComponent } from '../../core/skeleton/skeleton';
 
 /** Pre-computed incident row from the backend console view. */
@@ -117,6 +118,7 @@ const STATUS_CLS: Record<string, string> = {
 export class IncidentsPageComponent implements OnInit, OnDestroy {
   private static readonly REFRESH_MS = 15000;
   private readonly api = inject(ApiService);
+  private readonly hateoas = inject(HateoasService);
   private timer?: ReturnType<typeof setInterval>;
 
   loaded = false;
@@ -132,6 +134,8 @@ export class IncidentsPageComponent implements OnInit, OnDestroy {
   // HATEOAS: links of the currently-selected alert resource drive the actions.
   private selectedLinks: HalResource | null = null;
   private selectedLinksId: string | null = null;
+  // Links on the incidents view itself (templated `alert` and `forensics`).
+  private viewLinks: HalResource | null = null;
 
   // forensics drawer
   forensicsOpen = false;
@@ -190,8 +194,8 @@ export class IncidentsPageComponent implements OnInit, OnDestroy {
 
   private async fetchAnalysts(): Promise<void> {
     try {
-      // HATEOAS CollectionModel — the roster is under data.content.
-      const res = await firstValueFrom(this.api.get<{ content: string[] }>('/alerts/analysts'));
+      // Discover the roster from the index; CollectionModel -> data.content.
+      const res = await this.hateoas.follow<{ content: string[] }>('analysts');
       this.analysts = res?.data?.content ?? [];
     } catch {
       this.analysts = [];
@@ -220,9 +224,11 @@ export class IncidentsPageComponent implements OnInit, OnDestroy {
 
   private async fetchView(): Promise<IncidentsViewDto | null> {
     try {
-      const res = await firstValueFrom(this.api.get<IncidentsViewDto>('/console/incidents'));
+      const res = await this.hateoas.follow<IncidentsViewDto & HalResource>('console-incidents');
+      this.viewLinks = res?.data ?? null;
       return res?.data ?? null;
     } catch {
+      this.viewLinks = null;
       return null;
     }
   }
@@ -272,7 +278,10 @@ export class IncidentsPageComponent implements OnInit, OnDestroy {
     this.selectedLinksId = id;
     this.selectedLinks = null;
     try {
-      const res = await firstValueFrom(this.api.get<HalResource>(`/alerts/${id}`));
+      // Follow the templated `alert` link from the incidents view.
+      const tmpl = linkHref(this.viewLinks, 'alert');
+      const href = tmpl ? expand(tmpl, { alertId: id }) : `/alerts/${id}`;
+      const res = await this.hateoas.followHref<HalResource>(href);
       this.selectedLinks = res?.data ?? null;
     } catch {
       this.selectedLinks = null;
@@ -360,9 +369,12 @@ export class IncidentsPageComponent implements OnInit, OnDestroy {
     this.forensicsLoading = true;
     this.forensics = null;
     try {
-      const res = await firstValueFrom(
-        this.api.get<ForensicsViewDto>(`/console/incidents/${sel.id}/forensics`),
-      );
+      // Follow the templated `forensics` link from the incidents view.
+      const tmpl = linkHref(this.viewLinks, 'forensics');
+      const href = tmpl
+        ? expand(tmpl, { alertId: sel.id })
+        : `/console/incidents/${sel.id}/forensics`;
+      const res = await this.hateoas.followHref<ForensicsViewDto>(href);
       const view = res?.data ?? null;
       this.forensics = view;
       this.forensicsPackets = (view?.packets ?? []).map((p) => ({
