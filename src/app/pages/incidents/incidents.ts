@@ -370,7 +370,20 @@ export class IncidentsPageComponent implements OnInit, OnDestroy {
     }
     this.exporting = true;
     try {
-      const blob = await firstValueFrom(this.api.getBlob('/console/incidents/export'));
+      // Export via the ClickHouse download service, honouring the queue's
+      // active tab (All/Critical/Pending) and the text filter.
+      const p = new URLSearchParams();
+      if (this.filter === 'critical') {
+        p.set('severity', 'CRITICAL');
+      } else if (this.filter === 'pending') {
+        p.set('acknowledged', 'false');
+      }
+      const q = this.filterText.trim();
+      if (q) {
+        p.set('search', q);
+      }
+      p.set('format', 'csv');
+      const blob = await firstValueFrom(this.api.getBlob(`/reports/alerts/download?${p.toString()}`));
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
