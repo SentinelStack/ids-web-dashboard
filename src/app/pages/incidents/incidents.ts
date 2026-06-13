@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
+import { HalResource, linkHref } from '../../core/models/hateoas';
 import { ApiService } from '../../core/services/api.service';
 import { SkeletonComponent } from '../../core/skeleton/skeleton';
 
@@ -127,6 +128,10 @@ export class IncidentsPageComponent implements OnInit, OnDestroy {
   // analyst assignment dropdown
   analysts: string[] = [];
   assignOpen = false;
+
+  // HATEOAS: links of the currently-selected alert resource drive the actions.
+  private selectedLinks: HalResource | null = null;
+  private selectedLinksId: string | null = null;
 
   // forensics drawer
   forensicsOpen = false;
@@ -257,6 +262,21 @@ export class IncidentsPageComponent implements OnInit, OnDestroy {
     this.anomaly = row.anomaly;
     this.packetRate = row.packetRate;
     this.bytes = row.bytes;
+    if (this.selectedLinksId !== row.id) {
+      void this.loadLinks(row.id);
+    }
+  }
+
+  /** Fetch the alert resource so its HATEOAS links drive the inspector actions. */
+  private async loadLinks(id: string): Promise<void> {
+    this.selectedLinksId = id;
+    this.selectedLinks = null;
+    try {
+      const res = await firstValueFrom(this.api.get<HalResource>(`/alerts/${id}`));
+      this.selectedLinks = res?.data ?? null;
+    } catch {
+      this.selectedLinks = null;
+    }
   }
 
   async acknowledge(): Promise<void> {
@@ -266,7 +286,10 @@ export class IncidentsPageComponent implements OnInit, OnDestroy {
     }
     this.acknowledging = true;
     try {
-      await firstValueFrom(this.api.patch(`/alerts/${sel.id}/acknowledge`, {}));
+      // Follow the `acknowledge` link advertised by the alert resource.
+      const href = linkHref(this.selectedLinks, 'acknowledge') ?? `/alerts/${sel.id}/acknowledge`;
+      await firstValueFrom(this.api.patch(href, {}));
+      this.selectedLinksId = null;
       await this.refresh();
       const updated = this.allRows.find((r) => r.id === sel.id);
       if (updated) {
@@ -297,7 +320,10 @@ export class IncidentsPageComponent implements OnInit, OnDestroy {
     this.assignOpen = false;
     this.assigning = true;
     try {
-      await firstValueFrom(this.api.patch(`/alerts/${sel.id}/assign`, { analyst }));
+      // Follow the `assign` link advertised by the alert resource.
+      const href = linkHref(this.selectedLinks, 'assign') ?? `/alerts/${sel.id}/assign`;
+      await firstValueFrom(this.api.patch(href, { analyst }));
+      this.selectedLinksId = null;
       await this.refresh();
     } catch {
       // ignore; next poll reflects state
@@ -313,7 +339,10 @@ export class IncidentsPageComponent implements OnInit, OnDestroy {
     }
     this.containing = true;
     try {
-      await firstValueFrom(this.api.post(`/alerts/${sel.id}/contain`, {}));
+      // Follow the `contain` link advertised by the alert resource.
+      const href = linkHref(this.selectedLinks, 'contain') ?? `/alerts/${sel.id}/contain`;
+      await firstValueFrom(this.api.post(href, {}));
+      this.selectedLinksId = null;
       await this.refresh();
     } catch {
       // ignore; next poll reflects state
