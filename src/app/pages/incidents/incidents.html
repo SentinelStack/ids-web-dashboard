@@ -208,10 +208,29 @@
                         : 'ACKNOWLEDGE'
                   }}
                 </button>
-                <button class="act">ASSIGN ANALYST</button>
+                <button
+                  class="act"
+                  [disabled]="selected.acknowledged || assigning"
+                  (click)="assign()"
+                >
+                  {{
+                    assigning
+                      ? 'WORKING…'
+                      : selected.assignee !== 'Unassigned' && selected.assignee !== 'System'
+                        ? selected.assignee.toUpperCase()
+                        : 'ASSIGN ANALYST'
+                  }}
+                </button>
               </div>
-              <button class="act danger">CONTAIN TRAFFIC</button>
-              <button class="act solid">OPEN FORENSICS</button>
+              <button
+                class="act danger"
+                [class.done]="selected.contained"
+                [disabled]="selected.contained || containing"
+                (click)="contain()"
+              >
+                {{ selected.contained ? 'TRAFFIC CONTAINED' : containing ? 'WORKING…' : 'CONTAIN TRAFFIC' }}
+              </button>
+              <button class="act solid" (click)="openForensics()">OPEN FORENSICS</button>
             </div>
           </div>
         }
@@ -308,6 +327,119 @@
           <app-skeleton w="50%" h="12px" />
           <app-skeleton w="100%" h="120px" />
         </div>
+      </div>
+    </div>
+  }
+
+  @if (forensicsOpen) {
+    <div class="forensics-overlay" (click)="closeForensics()">
+      <div class="forensics-drawer" (click)="$event.stopPropagation()">
+        <div class="fx-head">
+          <div>
+            <span class="cap"
+              ><span class="material-symbols-outlined">travel_explore</span>Forensic Analysis</span
+            >
+            @if (forensics) {
+              <h2>{{ forensics.title }}</h2>
+              <p class="fx-sub mono">
+                {{ forensics.incId }} · SRC {{ forensics.source }} → {{ forensics.target }}
+                @if (forensics.contained) {
+                  <span class="fx-contained"
+                    ><span class="material-symbols-outlined">block</span>CONTAINED</span
+                  >
+                }
+              </p>
+            }
+          </div>
+          <button class="fx-close" (click)="closeForensics()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        @if (forensicsLoading) {
+          <div class="fx-body" style="display: flex; flex-direction: column; gap: 12px">
+            <app-skeleton w="100%" h="70px" />
+            <app-skeleton w="100%" h="40px" />
+            @for (i of [0, 1, 2, 3, 4, 5]; track i) {
+              <app-skeleton w="100%" h="30px" />
+            }
+          </div>
+        } @else if (forensics) {
+          <div class="fx-body fade-in">
+            <div class="fx-stats">
+              @for (s of forensics.stats; track s.label) {
+                <div class="fx-stat">
+                  <span class="cap">{{ s.label }}</span>
+                  <strong>{{ s.value }}</strong>
+                </div>
+              }
+            </div>
+
+            @if (forensicsProtocols.length) {
+              <div class="fx-protos">
+                @for (p of forensicsProtocols; track p.name) {
+                  <div class="fx-proto">
+                    <span>{{ p.name }}</span>
+                    <div class="bar"><i class="{{ p.cls }}" [style.width.%]="p.pct"></i></div>
+                    <b>{{ p.pct }}%</b>
+                  </div>
+                }
+              </div>
+            }
+
+            @if (forensics.topPorts.length) {
+              <div class="fx-ports">
+                @for (port of forensics.topPorts; track port.label) {
+                  <span class="fx-port" [class.danger]="port.danger"
+                    >{{ port.label }} · {{ port.packets }}</span
+                  >
+                }
+              </div>
+            }
+
+            <h4 class="cap divider">
+              Captured Packets <small>from {{ forensics.source }}</small>
+            </h4>
+            <div class="fx-table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Proto</th>
+                    <th>Source</th>
+                    <th>Destination</th>
+                    <th>Port</th>
+                    <th>Size</th>
+                    <th>Flags</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (p of forensicsPackets; track $index) {
+                    <tr [class.susp]="p.suspicious">
+                      <td class="mono">{{ p.time }}</td>
+                      <td><span class="proto {{ p.protoCls }}">{{ p.proto }}</span></td>
+                      <td class="mono">{{ p.src }}</td>
+                      <td class="mono">{{ p.dst }}</td>
+                      <td class="mono">{{ p.port }}</td>
+                      <td class="mono">{{ p.size }}</td>
+                      <td class="mono">{{ p.flags }}</td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="7" class="empty">
+                        No packets captured from this source in the hot window.
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        } @else {
+          <div class="fx-body">
+            <p class="empty">Could not load forensics for this incident.</p>
+          </div>
+        }
       </div>
     </div>
   }

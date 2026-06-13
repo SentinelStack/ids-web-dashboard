@@ -622,6 +622,12 @@ table {
         background: $dim;
       }
     }
+    &.danger.done {
+      border-color: rgb(120 230 180 / 60%);
+      color: #8be6b4;
+      background: rgb(120 230 180 / 10%);
+      opacity: 1;
+    }
   }
 }
 
@@ -780,5 +786,233 @@ table {
   }
   .body-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ── Forensics drawer ── */
+.forensics-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgb(2 6 12 / 62%);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: flex-end;
+  animation: fx-fade 0.2s ease both;
+}
+@keyframes fx-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.forensics-drawer {
+  width: min(720px, 94vw);
+  height: 100%;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #0b1119, #070b11);
+  border-left: 1px solid rgb(76 214 255 / 18%);
+  box-shadow: -24px 0 60px rgb(0 0 0 / 45%);
+  padding: 22px;
+  animation: fx-slide 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes fx-slide {
+  from {
+    transform: translateX(40px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+.fx-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+
+  h2 {
+    margin: 8px 0 4px;
+    font-size: 19px;
+    color: #eaf4ff;
+  }
+  .fx-sub {
+    font-size: 12px;
+    color: rgb(187 201 207 / 80%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .fx-contained {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    color: #8be6b4;
+    border: 1px solid rgb(120 230 180 / 45%);
+    background: rgb(120 230 180 / 12%);
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-family: $caps;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    .material-symbols-outlined {
+      font-size: 13px;
+    }
+  }
+  .fx-close {
+    border: 1px solid rgb(255 255 255 / 12%);
+    background: rgb(255 255 255 / 4%);
+    color: #e2e2e8;
+    border-radius: 8px;
+    width: 34px;
+    height: 34px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    flex: none;
+    &:hover {
+      background: rgb(255 180 171 / 14%);
+    }
+  }
+}
+
+.fx-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+
+  .fx-stat {
+    border: 1px solid rgb(255 255 255 / 8%);
+    border-radius: 10px;
+    background: rgb(255 255 255 / 3%);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    strong {
+      font-size: 17px;
+      color: $primary;
+      font-family: $mono;
+    }
+  }
+}
+
+.fx-protos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+
+  .fx-proto {
+    display: grid;
+    grid-template-columns: 48px 1fr 48px;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: rgb(210 222 230 / 85%);
+    b {
+      text-align: right;
+      font-family: $mono;
+      color: #cfe7f2;
+    }
+    .bar {
+      height: 7px;
+      border-radius: 6px;
+      background: rgb(255 255 255 / 6%);
+      overflow: hidden;
+      i {
+        display: block;
+        height: 100%;
+        border-radius: 6px;
+        background: $primary;
+        &.udp {
+          background: $secondary;
+        }
+        &.icmp {
+          background: $warn;
+        }
+      }
+    }
+  }
+}
+
+.fx-ports {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+
+  .fx-port {
+    font-family: $mono;
+    font-size: 10px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid rgb(255 255 255 / 10%);
+    background: rgb(255 255 255 / 4%);
+    color: #cfe7f2;
+    &.danger {
+      border-color: $error;
+      color: $error;
+      background: rgb(255 180 171 / 8%);
+    }
+  }
+}
+
+.fx-table-wrap {
+  overflow-x: auto;
+  border: 1px solid rgb(255 255 255 / 7%);
+  border-radius: 10px;
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  th {
+    text-align: left;
+    font-family: $caps;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgb(187 201 207 / 65%);
+    padding: 8px 10px;
+    border-bottom: 1px solid rgb(255 255 255 / 8%);
+  }
+  td {
+    padding: 7px 10px;
+    border-bottom: 1px solid rgb(255 255 255 / 4%);
+    color: rgb(214 226 234 / 88%);
+  }
+  tr.susp td {
+    background: rgb(255 180 171 / 6%);
+  }
+  .proto {
+    font-family: $caps;
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    padding: 2px 6px;
+    border-radius: 5px;
+    background: rgb(76 214 255 / 14%);
+    color: $primary;
+    &.udp {
+      background: rgb(221 183 255 / 14%);
+      color: $secondary;
+    }
+    &.icmp {
+      background: rgb(255 209 205 / 14%);
+      color: $warn;
+    }
+    &.susp {
+      background: rgb(255 180 171 / 16%);
+      color: $error;
+    }
   }
 }

@@ -18,12 +18,37 @@ interface IncidentRowDto {
   statusIcon: string;
   assignee: string;
   acknowledged: boolean;
+  contained: boolean;
   confidence: number;
   anomalyScore: string;
   packetRate: string;
   volume: string;
   targetPort: number;
   protocol: string;
+}
+
+interface ForensicsViewDto {
+  incId: string;
+  title: string;
+  source: string;
+  target: string;
+  severity: string;
+  category: string;
+  contained: boolean;
+  stats: { label: string; value: string }[];
+  protocols: { name: string; pct: number }[];
+  topPorts: { label: string; packets: string; danger: boolean }[];
+  packets: {
+    timestamp: string;
+    protocol: string;
+    source: string;
+    destination: string;
+    port: number;
+    size: string;
+    flags: string;
+    suspicious: boolean;
+  }[];
+  empty: boolean;
 }
 
 interface IncidentsViewDto {
@@ -56,6 +81,7 @@ interface IncidentVM {
   statusIcon: string;
   assignee: string;
   acknowledged: boolean;
+  contained: boolean;
   confidence: number;
   anomaly: string;
   packetRate: string;
@@ -94,6 +120,25 @@ export class IncidentsPageComponent implements OnInit, OnDestroy {
 
   loaded = false;
   acknowledging = false;
+  assigning = false;
+  containing = false;
+
+  // forensics drawer
+  forensicsOpen = false;
+  forensicsLoading = false;
+  forensics: ForensicsViewDto | null = null;
+  forensicsPackets: {
+    time: string;
+    proto: string;
+    protoCls: string;
+    src: string;
+    dst: string;
+    port: number;
+    size: string;
+    flags: string;
+    suspicious: boolean;
+  }[] = [];
+  forensicsProtocols: { name: string; pct: number; cls: string }[] = [];
 
   // KPIs
   kpiOpen = '0';
@@ -216,6 +261,81 @@ export class IncidentsPageComponent implements OnInit, OnDestroy {
     }
   }
 
+  async assign(): Promise<void> {
+    const sel = this.selected;
+    if (!sel || sel.acknowledged || this.assigning) {
+      return;
+    }
+    this.assigning = true;
+    try {
+      await firstValueFrom(this.api.patch(`/alerts/${sel.id}/assign`, {}));
+      await this.refresh();
+    } catch {
+      // ignore; next poll reflects state
+    } finally {
+      this.assigning = false;
+    }
+  }
+
+  async contain(): Promise<void> {
+    const sel = this.selected;
+    if (!sel || sel.contained || this.containing) {
+      return;
+    }
+    this.containing = true;
+    try {
+      await firstValueFrom(this.api.post(`/alerts/${sel.id}/contain`, {}));
+      await this.refresh();
+    } catch {
+      // ignore; next poll reflects state
+    } finally {
+      this.containing = false;
+    }
+  }
+
+  async openForensics(): Promise<void> {
+    const sel = this.selected;
+    if (!sel) {
+      return;
+    }
+    this.forensicsOpen = true;
+    this.forensicsLoading = true;
+    this.forensics = null;
+    try {
+      const res = await firstValueFrom(
+        this.api.get<ForensicsViewDto>(`/console/incidents/${sel.id}/forensics`),
+      );
+      const view = res?.data ?? null;
+      this.forensics = view;
+      this.forensicsPackets = (view?.packets ?? []).map((p) => ({
+        time: this.timeOf(p.timestamp),
+        proto: p.suspicious ? 'SUSPICIOUS' : p.protocol,
+        protoCls: p.suspicious ? 'susp' : p.protocol.toLowerCase(),
+        src: p.source,
+        dst: p.destination,
+        port: p.port,
+        size: p.size,
+        flags: p.flags,
+        suspicious: p.suspicious,
+      }));
+      this.forensicsProtocols = (view?.protocols ?? []).map((pr) => ({
+        name: pr.name,
+        pct: pr.pct,
+        cls: pr.name.toLowerCase(),
+      }));
+    } catch {
+      this.forensics = null;
+      this.forensicsPackets = [];
+      this.forensicsProtocols = [];
+    } finally {
+      this.forensicsLoading = false;
+    }
+  }
+
+  closeForensics(): void {
+    this.forensicsOpen = false;
+  }
+
   private applyKpis(k: IncidentsViewDto['kpis']): void {
     this.kpiOpen = `${k.open}`;
     this.kpiOpenDelta = k.openDelta;
@@ -228,17 +348,22 @@ export class IncidentsPageComponent implements OnInit, OnDestroy {
   private applyQueue(queue: IncidentRowDto[]): void {
     this.allRows = queue.map((r) => this.toVm(r));
     this.applyFilter();
-    if (!this.selected || !this.allRows.find((r) => r.id === this.selected?.id)) {
-      const top =
-        this.allRows.find((r) => r.severity === 'CRITICAL') ??
-        this.allRows.find((r) => !r.acknowledged) ??
-        this.allRows[0] ??
-        null;
-      if (top) {
-        this.select(top);
-      } else {
-        this.selected = null;
-      }
+    // Re-point the inspector at the fresh row so status/assignee/contained
+    // reflect the latest backend state after an action or a poll.
+    const current = this.selected ? this.allRows.find((r) => r.id === this.selected?.id) : null;
+    if (current) {
+      this.select(current);
+      return;
+    }
+    const top =
+      this.allRows.find((r) => r.severity === 'CRITICAL') ??
+      this.allRows.find((r) => !r.acknowledged) ??
+      this.allRows[0] ??
+      null;
+    if (top) {
+      this.select(top);
+    } else {
+      this.selected = null;
     }
   }
 
@@ -258,6 +383,7 @@ export class IncidentsPageComponent implements OnInit, OnDestroy {
       statusIcon: r.statusIcon,
       assignee: r.assignee,
       acknowledged: r.acknowledged,
+      contained: r.contained,
       confidence: r.confidence,
       anomaly: r.anomalyScore,
       packetRate: r.packetRate,
