@@ -1,0 +1,214 @@
+<div class="reports-page">
+  <div class="page-head">
+    <div>
+      <h1>Data Export</h1>
+      <p>Filtered alert downloads, served live from the ClickHouse analytical store.</p>
+    </div>
+    @if (meta) {
+      <div class="head-stats fade-in">
+        <div class="stat">
+          <span class="cap">Rows Available</span>
+          <strong>{{ meta.totalRows.toLocaleString() }}</strong>
+        </div>
+        <div class="stat">
+          <span class="cap">Date Range</span>
+          <strong class="mono">{{ meta.dateRange.min }} → {{ meta.dateRange.max }}</strong>
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (loaded) {
+    <div class="body-grid fade-in">
+      <div class="left-col">
+        <div class="filter-card card">
+          <h3 class="cap"><span class="material-symbols-outlined">filter_alt</span>Export Filters</h3>
+
+          <div class="filter-grid">
+            <label>
+              <span>From</span>
+              <input
+                type="date"
+                [(ngModel)]="filters.from"
+                [min]="meta?.dateRange?.min ?? null"
+                [max]="meta?.dateRange?.max ?? null"
+              />
+            </label>
+            <label>
+              <span>To</span>
+              <input
+                type="date"
+                [(ngModel)]="filters.to"
+                [min]="meta?.dateRange?.min ?? null"
+                [max]="meta?.dateRange?.max ?? null"
+              />
+            </label>
+            <label>
+              <span>Severity</span>
+              <select [(ngModel)]="filters.severity">
+                <option value="">Any</option>
+                @for (s of meta?.severities; track s) {
+                  <option [value]="s">{{ s }}</option>
+                }
+              </select>
+            </label>
+            <label>
+              <span>Type</span>
+              <select [(ngModel)]="filters.type">
+                <option value="">Any</option>
+                @for (t of meta?.types; track t) {
+                  <option [value]="t">{{ t }}</option>
+                }
+              </select>
+            </label>
+            <label>
+              <span>Protocol</span>
+              <select [(ngModel)]="filters.protocol">
+                <option value="">Any</option>
+                @for (p of meta?.protocols; track p) {
+                  <option [value]="p">{{ p }}</option>
+                }
+              </select>
+            </label>
+            <label>
+              <span>Acknowledged</span>
+              <select [(ngModel)]="filters.acknowledged">
+                <option value="">Any</option>
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+              </select>
+            </label>
+            <label>
+              <span>Source IP</span>
+              <input type="text" placeholder="e.g. 8.8.8.8" [(ngModel)]="filters.sourceIp" />
+            </label>
+            <label>
+              <span>Destination IP</span>
+              <input type="text" placeholder="e.g. 192.168.1.5" [(ngModel)]="filters.destinationIp" />
+            </label>
+            <label>
+              <span>Device ID</span>
+              <input type="text" placeholder="e.g. edge-router-01" [(ngModel)]="filters.deviceId" />
+            </label>
+            <label>
+              <span>Dest. Port</span>
+              <input type="number" placeholder="e.g. 443" [(ngModel)]="filters.destinationPort" />
+            </label>
+            <label>
+              <span>Row Limit</span>
+              <input type="number" [(ngModel)]="filters.limit" [max]="meta?.maxRows ?? null" min="1" />
+            </label>
+          </div>
+
+          <div class="filter-actions">
+            <button class="btn ghost" (click)="resetFilters()">
+              <span class="material-symbols-outlined">restart_alt</span>Reset
+            </button>
+            <button class="btn ghost" [disabled]="previewing" (click)="runPreview()">
+              <span class="material-symbols-outlined">{{ previewing ? 'hourglass_top' : 'visibility' }}</span>
+              {{ previewing ? 'Loading…' : 'Preview' }}
+            </button>
+            <button class="btn primary" [disabled]="downloading" (click)="download('csv')">
+              <span class="material-symbols-outlined">{{ downloading ? 'hourglass_top' : 'download' }}</span>
+              {{ downloading ? 'Exporting…' : 'Download CSV' }}
+            </button>
+            <button class="btn primary alt" [disabled]="downloading" (click)="download('json')">
+              <span class="material-symbols-outlined">data_object</span>JSON
+            </button>
+          </div>
+        </div>
+
+        <div class="preview-card card">
+          <div class="preview-head">
+            <h3 class="cap"><span class="material-symbols-outlined">table_rows</span>Preview</h3>
+            @if (preview) {
+              <span class="badge"
+                >{{ preview.returned }} rows{{ preview.hasMore ? ' (capped)' : '' }}</span
+              >
+            }
+          </div>
+
+          @if (previewError) {
+            <p class="empty err">{{ previewError }}</p>
+          } @else if (!preview) {
+            <p class="empty">Run a preview to see matching rows before exporting.</p>
+          } @else if (preview.rows.length === 0) {
+            <p class="empty">No alerts match these filters.</p>
+          } @else {
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    @for (c of preview.columns; track c) {
+                      <th>{{ c }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of preview.rows; track $index) {
+                    <tr>
+                      @for (c of preview.columns; track c) {
+                        <td class="mono">{{ row[c] }}</td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="right-col">
+        <div class="curated-card card">
+          <h3 class="cap"><span class="material-symbols-outlined">analytics</span>Curated Reports</h3>
+          <p class="sub">Pre-aggregated views, exported as CSV.</p>
+          <div class="curated-list">
+            @for (r of curated; track r.key) {
+              <div class="curated-item">
+                <div class="meta">
+                  <p>{{ r.label }}</p>
+                  <small>{{ r.description }}</small>
+                </div>
+                <button
+                  class="dl"
+                  [disabled]="curatedBusy === r.key"
+                  (click)="downloadCurated(r)"
+                  [attr.aria-label]="'Download ' + r.label"
+                >
+                  <span class="material-symbols-outlined">{{
+                    curatedBusy === r.key ? 'hourglass_top' : 'download'
+                  }}</span>
+                </button>
+              </div>
+            } @empty {
+              <p class="empty">No curated reports available.</p>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <div class="body-grid">
+      <div class="left-col">
+        <div class="filter-card card" style="display: flex; flex-direction: column; gap: 12px">
+          <app-skeleton w="35%" h="14px" />
+          <app-skeleton w="100%" h="180px" radius="10px" />
+          <app-skeleton w="60%" h="38px" />
+        </div>
+        <div class="preview-card card">
+          <app-skeleton w="30%" h="13px" />
+          <app-skeleton w="100%" h="160px" radius="10px" />
+        </div>
+      </div>
+      <div class="right-col">
+        <div class="curated-card card" style="display: flex; flex-direction: column; gap: 10px">
+          <app-skeleton w="50%" h="13px" />
+          @for (i of [0, 1, 2, 3, 4, 5]; track i) {
+            <app-skeleton w="100%" h="44px" />
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>
