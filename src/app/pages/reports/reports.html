@@ -22,7 +22,9 @@
     <div class="body-grid fade-in">
       <div class="left-col">
         <div class="filter-card card">
-          <h3 class="cap"><span class="material-symbols-outlined">filter_alt</span>Export Filters</h3>
+          <h3 class="cap">
+            <span class="material-symbols-outlined">filter_alt</span>Export Filters
+          </h3>
 
           <label class="search-row">
             <span class="material-symbols-outlined">search</span>
@@ -93,7 +95,11 @@
             </label>
             <label>
               <span>Destination IP</span>
-              <input type="text" placeholder="e.g. 192.168.1.5" [(ngModel)]="filters.destinationIp" />
+              <input
+                type="text"
+                placeholder="e.g. 192.168.1.5"
+                [(ngModel)]="filters.destinationIp"
+              />
             </label>
             <label>
               <span>Device ID</span>
@@ -133,7 +139,12 @@
             </label>
             <label>
               <span>Row Limit</span>
-              <input type="number" [(ngModel)]="filters.limit" [max]="meta?.maxRows ?? null" min="1" />
+              <input
+                type="number"
+                [(ngModel)]="filters.limit"
+                [max]="meta?.maxRows ?? null"
+                min="1"
+              />
             </label>
           </div>
 
@@ -142,11 +153,15 @@
               <span class="material-symbols-outlined">restart_alt</span>Reset
             </button>
             <button class="btn ghost" [disabled]="previewing" (click)="runPreview()">
-              <span class="material-symbols-outlined">{{ previewing ? 'hourglass_top' : 'visibility' }}</span>
+              <span class="material-symbols-outlined">{{
+                previewing ? 'hourglass_top' : 'visibility'
+              }}</span>
               {{ previewing ? 'Loading…' : 'Preview' }}
             </button>
             <button class="btn primary" [disabled]="downloading" (click)="download('csv')">
-              <span class="material-symbols-outlined">{{ downloading ? 'hourglass_top' : 'download' }}</span>
+              <span class="material-symbols-outlined">{{
+                downloading ? 'hourglass_top' : 'download'
+              }}</span>
               {{ downloading ? 'Exporting…' : 'Download CSV' }}
             </button>
             <button class="btn primary alt" [disabled]="downloading" (click)="download('json')">
@@ -198,7 +213,9 @@
 
       <div class="right-col">
         <div class="curated-card card">
-          <h3 class="cap"><span class="material-symbols-outlined">analytics</span>Curated Reports</h3>
+          <h3 class="cap">
+            <span class="material-symbols-outlined">analytics</span>Curated Reports
+          </h3>
           <p class="sub">Pre-aggregated views, exported as CSV.</p>
           <div class="curated-list">
             @for (r of curated; track r.key) {

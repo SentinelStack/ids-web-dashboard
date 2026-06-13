@@ -110,7 +110,11 @@ export class TrafficPageComponent implements OnInit, OnDestroy {
       pct: p.pct,
       cls: PROTOCOL_CLS[p.name] ?? 'muted',
     }));
-    this.topPorts = view.topPorts.map((p) => ({ label: p.label, pkts: p.packets, danger: p.danger }));
+    this.topPorts = view.topPorts.map((p) => ({
+      label: p.label,
+      pkts: p.packets,
+      danger: p.danger,
+    }));
     this.topIps = view.topSources.map((s) => ({
       ip: s.ip,
       tag: s.scope,
@@ -153,7 +157,9 @@ export class TrafficPageComponent implements OnInit, OnDestroy {
     const x = (i: number) => (i / (flow.length - 1)) * width;
     const y = (v: number) => bottom - (Math.min(100, Math.max(0, v)) / 100) * height;
     const line = (sel: (p: { tcp: number; udp: number }) => number) =>
-      flow.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(sel(p)).toFixed(1)}`).join(' ');
+      flow
+        .map((p, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(sel(p)).toFixed(1)}`)
+        .join(' ');
 
     this.flowTcpLine = line((p) => p.tcp);
     this.flowUdpLine = line((p) => p.udp);

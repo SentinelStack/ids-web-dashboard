@@ -383,7 +383,9 @@ export class IncidentsPageComponent implements OnInit, OnDestroy {
         p.set('search', q);
       }
       p.set('format', 'csv');
-      const blob = await firstValueFrom(this.api.getBlob(`/reports/alerts/download?${p.toString()}`));
+      const blob = await firstValueFrom(
+        this.api.getBlob(`/reports/alerts/download?${p.toString()}`),
+      );
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

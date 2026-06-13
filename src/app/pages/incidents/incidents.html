@@ -6,7 +6,9 @@
     </div>
     <div class="head-actions">
       <button class="btn ghost" [disabled]="exporting" (click)="exportReport()">
-        <span class="material-symbols-outlined">{{ exporting ? 'hourglass_top' : 'file_download' }}</span
+        <span class="material-symbols-outlined">{{
+          exporting ? 'hourglass_top' : 'file_download'
+        }}</span
         >{{ exporting ? 'Exporting…' : 'Export Report' }}
       </button>
       <button class="btn primary">
@@ -252,7 +254,13 @@
                 [disabled]="selected.contained || containing"
                 (click)="contain()"
               >
-                {{ selected.contained ? 'TRAFFIC CONTAINED' : containing ? 'WORKING…' : 'CONTAIN TRAFFIC' }}
+                {{
+                  selected.contained
+                    ? 'TRAFFIC CONTAINED'
+                    : containing
+                      ? 'WORKING…'
+                      : 'CONTAIN TRAFFIC'
+                }}
               </button>
               <button class="act solid" (click)="openForensics()">OPEN FORENSICS</button>
             </div>
@@ -441,7 +449,9 @@
                   @for (p of forensicsPackets; track $index) {
                     <tr [class.susp]="p.suspicious">
                       <td class="mono">{{ p.time }}</td>
-                      <td><span class="proto {{ p.protoCls }}">{{ p.proto }}</span></td>
+                      <td>
+                        <span class="proto {{ p.protoCls }}">{{ p.proto }}</span>
+                      </td>
                       <td class="mono">{{ p.src }}</td>
                       <td class="mono">{{ p.dst }}</td>
                       <td class="mono">{{ p.port }}</td>

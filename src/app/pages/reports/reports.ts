@@ -174,7 +174,9 @@ export class ReportsPageComponent implements OnInit {
     this.previewError = '';
     try {
       const qs = this.queryString();
-      const res = await firstValueFrom(this.api.get<PreviewResponse>(`/reports/alerts/preview?${qs}`));
+      const res = await firstValueFrom(
+        this.api.get<PreviewResponse>(`/reports/alerts/preview?${qs}`),
+      );
       this.preview = res.data ?? null;
     } catch {
       this.preview = null;
@@ -191,7 +193,10 @@ export class ReportsPageComponent implements OnInit {
     this.downloading = true;
     try {
       const qs = this.queryString();
-      await this.streamDownload(`/reports/alerts/download?${qs}&format=${format}`, `sentinel-alerts.${format}`);
+      await this.streamDownload(
+        `/reports/alerts/download?${qs}&format=${format}`,
+        `sentinel-alerts.${format}`,
+      );
     } finally {
       this.downloading = false;
     }
