@@ -1,85 +1,142 @@
-<div class="content-grid">
-  <section class="alerts card">
-    <div class="section-header">
-      <h2>Live Alerts</h2>
-      <span class="pill">LIVE</span>
-    </div>
-
-    @for (a of liveAlerts; track $index) {
-      <article class="alert {{ a.cls }}">
-        <div class="alert-top">
-          <span class="tag">{{ a.tag }}</span
-          ><time>{{ a.time }}</time>
-        </div>
-        <h4>{{ a.title }}</h4>
-        @for (line of a.lines; track $index) {
-          <p>{{ line }}</p>
-        }
-      </article>
-    }
-
-    @if (loaded && liveAlerts.length === 0) {
-      <p class="empty">No alerts yet.</p>
-    }
-  </section>
-
-  <section class="center-column">
-    <div class="map card">
-      <div class="map-head">
-        <h2>Global Threat Vectors</h2>
-        <p>Real-time connection intercept</p>
+@if (loaded) {
+  <div class="content-grid fade-in">
+    <section class="alerts card">
+      <div class="section-header">
+        <h2>Live Alerts</h2>
+        <span class="pill">LIVE</span>
       </div>
-      <app-threat-map></app-threat-map>
-    </div>
 
-    <div class="volume card">
-      <div class="volume-head">
-        <h3>Threat Volume (24h)</h3>
-        <span>{{ volumeDelta }}</span>
-      </div>
-      <div class="bars">
-        @for (bar of bars; track $index) {
-          <span [class.hot]="bar.hot" [style.--h]="bar.h + '%'"></span>
-        }
-      </div>
-      <div class="ticks">
-        <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:59</span>
-      </div>
-    </div>
-  </section>
-
-  <section class="right-column">
-    <div class="kpi card">
-      <h4>Total Alerts</h4>
-      <p>{{ totalAlerts }} <span class="material-symbols-outlined">shield</span></p>
-    </div>
-
-    <div class="kpi card danger">
-      <h4>Unique Source IPs</h4>
-      <p>{{ sourceIps }} <span class="material-symbols-outlined">block</span></p>
-    </div>
-
-    <div class="kpi card secondary">
-      <h4>System Health</h4>
-      <p>{{ systemHealth }} <span class="dot"></span></p>
-    </div>
-
-    <div class="origins card">
-      <h3>TOP ATTACK ORIGINS</h3>
-
-      @for (o of origins; track $index) {
-        <div class="origin">
-          <div>
-            <span>{{ o.name }}</span
-            ><small>{{ o.pct }}%</small>
+      @for (a of liveAlerts; track $index) {
+        <article class="alert {{ a.cls }}">
+          <div class="alert-top">
+            <span class="tag">{{ a.tag }}</span
+            ><time>{{ a.time }}</time>
           </div>
-          <b [style.--w]="o.pct + '%'" class="{{ o.cls }}"></b>
-        </div>
+          <h4>{{ a.title }}</h4>
+          @for (line of a.lines; track $index) {
+            <p>{{ line }}</p>
+          }
+        </article>
       }
 
-      @if (loaded && origins.length === 0) {
-        <p class="empty">No source data yet.</p>
+      @if (liveAlerts.length === 0) {
+        <p class="empty">No alerts yet.</p>
       }
-    </div>
-  </section>
-</div>
+    </section>
+
+    <section class="center-column">
+      <div class="map card">
+        <div class="map-head">
+          <h2>Global Threat Vectors</h2>
+          <p>Real-time connection intercept</p>
+        </div>
+        <app-threat-map></app-threat-map>
+      </div>
+
+      <div class="volume card">
+        <div class="volume-head">
+          <h3>Threat Volume (24h)</h3>
+          <span>{{ volumeDelta }}</span>
+        </div>
+        <div class="bars">
+          @for (bar of bars; track $index) {
+            <span [class.hot]="bar.hot" [style.--h]="bar.h + '%'"></span>
+          }
+        </div>
+        <div class="ticks">
+          <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:59</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="right-column">
+      <div class="kpi card">
+        <h4>Total Alerts</h4>
+        <p>{{ totalAlerts }} <span class="material-symbols-outlined">shield</span></p>
+      </div>
+
+      <div class="kpi card danger">
+        <h4>Unique Source IPs</h4>
+        <p>{{ sourceIps }} <span class="material-symbols-outlined">block</span></p>
+      </div>
+
+      <div class="kpi card secondary">
+        <h4>System Health</h4>
+        <p>{{ systemHealth }} <span class="dot"></span></p>
+      </div>
+
+      <div class="origins card">
+        <h3>TOP ATTACK ORIGINS</h3>
+
+        @for (o of origins; track $index) {
+          <div class="origin">
+            <div>
+              <span>{{ o.name }}</span
+              ><small>{{ o.pct }}%</small>
+            </div>
+            <b [style.--w]="o.pct + '%'" class="{{ o.cls }}"></b>
+          </div>
+        }
+
+        @if (origins.length === 0) {
+          <p class="empty">No source data yet.</p>
+        }
+      </div>
+    </section>
+  </div>
+} @else {
+  <div class="content-grid">
+    <section class="alerts card">
+      <div class="section-header">
+        <h2>Live Alerts</h2>
+        <span class="pill">LIVE</span>
+      </div>
+      @for (i of [0, 1, 2, 3, 4]; track i) {
+        <article class="alert">
+          <div class="alert-top">
+            <app-skeleton w="62px" h="18px" radius="6px" />
+            <app-skeleton w="58px" h="13px" />
+          </div>
+          <app-skeleton w="70%" h="18px" />
+          <app-skeleton w="55%" h="12px" />
+          <app-skeleton w="48%" h="12px" />
+        </article>
+      }
+    </section>
+
+    <section class="center-column">
+      <div class="map card">
+        <div class="map-head">
+          <h2>Global Threat Vectors</h2>
+          <p>Real-time connection intercept</p>
+        </div>
+        <app-skeleton w="100%" h="420px" radius="12px" />
+      </div>
+
+      <div class="volume card">
+        <div class="volume-head">
+          <h3>Threat Volume (24h)</h3>
+        </div>
+        <app-skeleton w="100%" h="110px" />
+      </div>
+    </section>
+
+    <section class="right-column">
+      @for (i of [0, 1, 2]; track i) {
+        <div class="kpi card">
+          <app-skeleton w="55%" h="12px" />
+          <app-skeleton w="42%" h="30px" />
+        </div>
+      }
+      <div class="origins card">
+        <h3>TOP ATTACK ORIGINS</h3>
+        @for (i of [0, 1, 2, 3, 4]; track i) {
+          <div class="origin">
+            <app-skeleton w="100%" h="12px" />
+            <app-skeleton w="100%" h="6px" radius="4px" />
+          </div>
+        }
+      </div>
+    </section>
+  </div>
+}

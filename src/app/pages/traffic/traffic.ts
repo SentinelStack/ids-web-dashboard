@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { ApiService } from '../../core/services/api.service';
+import { SkeletonComponent } from '../../core/skeleton/skeleton';
 
 interface Summary {
   totalPackets?: number;
@@ -75,6 +76,7 @@ const PORT_NAMES: Record<number, string> = {
 
 @Component({
   selector: 'app-traffic-page',
+  imports: [SkeletonComponent],
   templateUrl: './traffic.html',
   styleUrl: './traffic.scss',
 })

@@ -3,6 +3,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { ApiService } from '../../core/services/api.service';
 import { GeoService } from '../../core/services/geo.service';
+import { SkeletonComponent } from '../../core/skeleton/skeleton';
 import { ThreatMapComponent } from './threat-map/threat-map';
 
 interface AlertItem {
@@ -40,7 +41,7 @@ interface BarVM {
 
 @Component({
   selector: 'app-dashboard-page',
-  imports: [ThreatMapComponent],
+  imports: [ThreatMapComponent, SkeletonComponent],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })
@@ -77,9 +78,11 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
     this.buildLiveAlerts(alerts);
     this.buildKpis(alerts);
     this.buildVolume(alerts);
+    // Reveal the main content as soon as the alert-derived data is ready; the
+    // health and geo-based origins fill in a beat later (own empty states).
+    this.loaded = true;
     await this.buildHealth();
     await this.buildOrigins(alerts);
-    this.loaded = true;
   }
 
   private async fetchAlerts(): Promise<AlertItem[]> {

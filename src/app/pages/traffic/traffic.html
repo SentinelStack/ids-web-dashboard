@@ -1,200 +1,258 @@
-<div class="traffic-page">
-  <section class="summary-grid">
-    <article class="glass card stat">
-      <div class="head">
-        <span>Total Packets (1h)</span><span class="material-symbols-outlined">network_check</span>
-      </div>
-      <div class="value">
-        <strong>{{ totalPackets }}</strong>
-      </div>
-    </article>
+@if (loaded) {
+  <div class="traffic-page fade-in">
+    <section class="summary-grid">
+      <article class="glass card stat">
+        <div class="head">
+          <span>Total Packets (1h)</span
+          ><span class="material-symbols-outlined">network_check</span>
+        </div>
+        <div class="value">
+          <strong>{{ totalPackets }}</strong>
+        </div>
+      </article>
 
-    <article class="glass card stat">
-      <div class="head">
-        <span>TCP Traffic %</span><span class="material-symbols-outlined">swap_horiz</span>
-      </div>
-      <div class="value">
-        <strong>{{ tcpPct }}%</strong>
-        <div class="line"><span [style.--w]="tcpPct + '%'"></span></div>
-      </div>
-    </article>
+      <article class="glass card stat">
+        <div class="head">
+          <span>TCP Traffic %</span><span class="material-symbols-outlined">swap_horiz</span>
+        </div>
+        <div class="value">
+          <strong>{{ tcpPct }}%</strong>
+          <div class="line"><span [style.--w]="tcpPct + '%'"></span></div>
+        </div>
+      </article>
 
-    <article class="glass card stat">
-      <div class="head">
-        <span>UDP Traffic %</span
-        ><span class="material-symbols-outlined">settings_input_antenna</span>
-      </div>
-      <div class="value">
-        <strong>{{ udpPct }}%</strong>
-        <div class="line"><span class="udp" [style.--w]="udpPct + '%'"></span></div>
-      </div>
-    </article>
+      <article class="glass card stat">
+        <div class="head">
+          <span>UDP Traffic %</span
+          ><span class="material-symbols-outlined">settings_input_antenna</span>
+        </div>
+        <div class="value">
+          <strong>{{ udpPct }}%</strong>
+          <div class="line"><span class="udp" [style.--w]="udpPct + '%'"></span></div>
+        </div>
+      </article>
 
-    <article class="glass card stat warning">
-      <div class="head">
-        <span>Suspicious Traffic %</span><span class="material-symbols-outlined">security</span>
-      </div>
-      <div class="value">
-        <strong>{{ suspiciousPct }}%</strong
-        ><em><span class="material-symbols-outlined">warning</span>Alert</em>
-      </div>
-    </article>
-  </section>
+      <article class="glass card stat warning">
+        <div class="head">
+          <span>Suspicious Traffic %</span><span class="material-symbols-outlined">security</span>
+        </div>
+        <div class="value">
+          <strong>{{ suspiciousPct }}%</strong
+          ><em><span class="material-symbols-outlined">warning</span>Alert</em>
+        </div>
+      </article>
+    </section>
 
-  <section class="main-grid">
-    <article class="glass card flow">
-      <div class="flow-head">
-        <h2>Real-time Traffic Flow</h2>
-        <div class="legend">
-          <span><i class="dot tcp"></i>TCP</span>
-          <span><i class="dot udp"></i>UDP</span>
-          <button>Last 20 Minutes</button>
+    <section class="main-grid">
+      <article class="glass card flow">
+        <div class="flow-head">
+          <h2>Real-time Traffic Flow</h2>
+          <div class="legend">
+            <span><i class="dot tcp"></i>TCP</span>
+            <span><i class="dot udp"></i>UDP</span>
+            <button>Last 20 Minutes</button>
+          </div>
+        </div>
+
+        <div class="chart-wrap">
+          <svg viewBox="0 0 800 300" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="tcpFill" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stop-color="#00d1ff" stop-opacity="0.3"></stop>
+                <stop offset="100%" stop-color="#00d1ff" stop-opacity="0"></stop>
+              </linearGradient>
+              <linearGradient id="udpFill" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stop-color="#ddb7ff" stop-opacity="0.25"></stop>
+                <stop offset="100%" stop-color="#ddb7ff" stop-opacity="0"></stop>
+              </linearGradient>
+            </defs>
+            <line
+              x1="0"
+              y1="50"
+              x2="800"
+              y2="50"
+              stroke="rgba(255,255,255,.06)"
+              stroke-dasharray="4"
+            ></line>
+            <line
+              x1="0"
+              y1="150"
+              x2="800"
+              y2="150"
+              stroke="rgba(255,255,255,.06)"
+              stroke-dasharray="4"
+            ></line>
+            <line
+              x1="0"
+              y1="250"
+              x2="800"
+              y2="250"
+              stroke="rgba(255,255,255,.06)"
+              stroke-dasharray="4"
+            ></line>
+            <path [attr.d]="flowTcpArea" fill="url(#tcpFill)"></path>
+            <path [attr.d]="flowUdpArea" fill="url(#udpFill)"></path>
+            <path [attr.d]="flowTcpLine" fill="none" stroke="#00d1ff" stroke-width="2"></path>
+            <path [attr.d]="flowUdpLine" fill="none" stroke="#ddb7ff" stroke-width="2"></path>
+          </svg>
+        </div>
+      </article>
+
+      <aside class="side-stack">
+        <article class="glass card small">
+          <h3>Top Protocols</h3>
+          @for (p of protocols; track p.name) {
+            <div class="metric">
+              <div>
+                <span>{{ p.name }}</span
+                ><span>{{ p.pct }}%</span>
+              </div>
+              <b><i [class]="p.cls" [style.--w]="p.pct + '%'"></i></b>
+            </div>
+          }
+        </article>
+
+        <article class="glass card small">
+          <h3>Top Ports</h3>
+          @for (port of topPorts; track port.label) {
+            <div class="list-row" [class.danger]="port.danger">
+              <span>{{ port.label }}</span
+              ><small>{{ port.pkts }}</small>
+            </div>
+          } @empty {
+            <div class="list-row"><span>—</span></div>
+          }
+        </article>
+
+        <article class="glass card small">
+          <h3>Top Source IPs</h3>
+          @for (ip of topIps; track ip.ip) {
+            <div class="ip-row">
+              <i [class]="ip.cls"></i><span>{{ ip.ip }}</span
+              ><small>{{ ip.tag }}</small>
+            </div>
+          } @empty {
+            <div class="ip-row"><span>—</span></div>
+          }
+        </article>
+      </aside>
+    </section>
+
+    <section class="glass card monitor">
+      <div class="monitor-head">
+        <div>
+          <span class="material-symbols-outlined">terminal</span>
+          <h2>Packet Stream Monitor</h2>
+        </div>
+        <div class="actions">
+          <span class="live"><i></i>LIVE</span>
         </div>
       </div>
 
-      <div class="chart-wrap">
-        <svg viewBox="0 0 800 300" preserveAspectRatio="none">
-          <defs>
-            <linearGradient id="tcpFill" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stop-color="#00d1ff" stop-opacity="0.3"></stop>
-              <stop offset="100%" stop-color="#00d1ff" stop-opacity="0"></stop>
-            </linearGradient>
-            <linearGradient id="udpFill" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stop-color="#ddb7ff" stop-opacity="0.25"></stop>
-              <stop offset="100%" stop-color="#ddb7ff" stop-opacity="0"></stop>
-            </linearGradient>
-          </defs>
-          <line
-            x1="0"
-            y1="50"
-            x2="800"
-            y2="50"
-            stroke="rgba(255,255,255,.06)"
-            stroke-dasharray="4"
-          ></line>
-          <line
-            x1="0"
-            y1="150"
-            x2="800"
-            y2="150"
-            stroke="rgba(255,255,255,.06)"
-            stroke-dasharray="4"
-          ></line>
-          <line
-            x1="0"
-            y1="250"
-            x2="800"
-            y2="250"
-            stroke="rgba(255,255,255,.06)"
-            stroke-dasharray="4"
-          ></line>
-          <path [attr.d]="flowTcpArea" fill="url(#tcpFill)"></path>
-          <path [attr.d]="flowUdpArea" fill="url(#udpFill)"></path>
-          <path [attr.d]="flowTcpLine" fill="none" stroke="#00d1ff" stroke-width="2"></path>
-          <path [attr.d]="flowUdpLine" fill="none" stroke="#ddb7ff" stroke-width="2"></path>
-        </svg>
-      </div>
-    </article>
-
-    <aside class="side-stack">
-      <article class="glass card small">
-        <h3>Top Protocols</h3>
-        @for (p of protocols; track p.name) {
-          <div class="metric">
-            <div>
-              <span>{{ p.name }}</span
-              ><span>{{ p.pct }}%</span>
-            </div>
-            <b><i [class]="p.cls" [style.--w]="p.pct + '%'"></i></b>
-          </div>
-        }
-      </article>
-
-      <article class="glass card small">
-        <h3>Top Ports</h3>
-        @for (port of topPorts; track port.label) {
-          <div class="list-row" [class.danger]="port.danger">
-            <span>{{ port.label }}</span
-            ><small>{{ port.pkts }}</small>
-          </div>
-        } @empty {
-          <div class="list-row"><span>—</span></div>
-        }
-      </article>
-
-      <article class="glass card small">
-        <h3>Top Source IPs</h3>
-        @for (ip of topIps; track ip.ip) {
-          <div class="ip-row">
-            <i [class]="ip.cls"></i><span>{{ ip.ip }}</span
-            ><small>{{ ip.tag }}</small>
-          </div>
-        } @empty {
-          <div class="ip-row"><span>—</span></div>
-        }
-      </article>
-    </aside>
-  </section>
-
-  <section class="glass card monitor">
-    <div class="monitor-head">
-      <div>
-        <span class="material-symbols-outlined">terminal</span>
-        <h2>Packet Stream Monitor</h2>
-      </div>
-      <div class="actions">
-        <span class="live"><i></i>LIVE</span>
-      </div>
-    </div>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>TIMESTAMP</th>
-            <th>PROTOCOL</th>
-            <th>SOURCE IP</th>
-            <th>DIRECTION</th>
-            <th>DESTINATION IP</th>
-            <th>PORT</th>
-            <th class="right">SIZE</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (pk of packets; track $index) {
-            <tr [class.susp]="pk.suspicious">
-              <td>{{ pk.time }}</td>
-              <td>
-                <span [class]="'pill ' + pk.protoCls">{{ pk.proto }}</span>
-              </td>
-              <td>{{ pk.src }}</td>
-              <td>{{ pk.suspicious ? '⚠' : '→' }}</td>
-              <td>{{ pk.dst }}</td>
-              <td>{{ pk.port }}</td>
-              <td class="right">{{ pk.size }}</td>
-            </tr>
-          } @empty {
+      <div class="table-wrap">
+        <table>
+          <thead>
             <tr>
-              <td colspan="7">Waiting for packets…</td>
+              <th>TIMESTAMP</th>
+              <th>PROTOCOL</th>
+              <th>SOURCE IP</th>
+              <th>DIRECTION</th>
+              <th>DESTINATION IP</th>
+              <th>PORT</th>
+              <th class="right">SIZE</th>
             </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section class="glass card distribution">
-    <div class="dist-head">
-      <div>
-        <h2>Traffic Distribution</h2>
-        <p>Recent network volume across all segments.</p>
+          </thead>
+          <tbody>
+            @for (pk of packets; track $index) {
+              <tr [class.susp]="pk.suspicious">
+                <td>{{ pk.time }}</td>
+                <td>
+                  <span [class]="'pill ' + pk.protoCls">{{ pk.proto }}</span>
+                </td>
+                <td>{{ pk.src }}</td>
+                <td>{{ pk.suspicious ? '⚠' : '→' }}</td>
+                <td>{{ pk.dst }}</td>
+                <td>{{ pk.port }}</td>
+                <td class="right">{{ pk.size }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7">Waiting for packets…</td>
+              </tr>
+            }
+          </tbody>
+        </table>
       </div>
-    </div>
+    </section>
 
-    <div class="bars24">
-      @for (b of dist; track $index) {
-        <span [class.hot]="b.hot" [style.--h]="b.h + '%'"></span>
+    <section class="glass card distribution">
+      <div class="dist-head">
+        <div>
+          <h2>Traffic Distribution</h2>
+          <p>Recent network volume across all segments.</p>
+        </div>
+      </div>
+
+      <div class="bars24">
+        @for (b of dist; track $index) {
+          <span [class.hot]="b.hot" [style.--h]="b.h + '%'"></span>
+        }
+      </div>
+    </section>
+  </div>
+} @else {
+  <div class="traffic-page">
+    <section class="summary-grid">
+      @for (i of [0, 1, 2, 3]; track i) {
+        <article class="glass card stat">
+          <div class="head"><app-skeleton w="60%" h="12px" /></div>
+          <div class="value"><app-skeleton w="45%" h="30px" /></div>
+        </article>
       }
-    </div>
-  </section>
-</div>
+    </section>
+
+    <section class="main-grid">
+      <article class="glass card flow">
+        <div class="flow-head">
+          <h2>Real-time Traffic Flow</h2>
+        </div>
+        <div class="chart-wrap"><app-skeleton w="100%" h="300px" radius="12px" /></div>
+      </article>
+
+      <aside class="side-stack">
+        @for (card of [0, 1, 2]; track card) {
+          <article class="glass card small">
+            <app-skeleton w="40%" h="13px" />
+            @for (i of [0, 1, 2, 3]; track i) {
+              <div class="metric"><app-skeleton w="100%" h="12px" /></div>
+            }
+          </article>
+        }
+      </aside>
+    </section>
+
+    <section class="glass card monitor">
+      <div class="monitor-head">
+        <div>
+          <span class="material-symbols-outlined">terminal</span>
+          <h2>Packet Stream Monitor</h2>
+        </div>
+      </div>
+      <div
+        class="table-wrap"
+        style="display: flex; flex-direction: column; gap: 10px; padding: 14px"
+      >
+        @for (i of [0, 1, 2, 3, 4, 5]; track i) {
+          <app-skeleton w="100%" h="20px" />
+        }
+      </div>
+    </section>
+
+    <section class="glass card distribution">
+      <div class="dist-head">
+        <div><h2>Traffic Distribution</h2></div>
+      </div>
+      <app-skeleton w="100%" h="90px" />
+    </section>
+  </div>
+}
