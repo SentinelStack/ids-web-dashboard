@@ -30,6 +30,7 @@ interface CuratedReport {
 }
 
 interface Filters {
+  search: string;
   from: string;
   to: string;
   severity: string;
@@ -38,10 +39,39 @@ interface Filters {
   sourceIp: string;
   destinationIp: string;
   deviceId: string;
+  sourcePort: string;
   destinationPort: string;
+  minPacketCount: string;
+  maxPacketCount: string;
+  minBytes: string;
+  maxBytes: string;
+  minWindowSeconds: string;
+  alertId: string;
   acknowledged: string;
   limit: string;
 }
+
+const EMPTY_FILTERS: Filters = {
+  search: '',
+  from: '',
+  to: '',
+  severity: '',
+  type: '',
+  protocol: '',
+  sourceIp: '',
+  destinationIp: '',
+  deviceId: '',
+  sourcePort: '',
+  destinationPort: '',
+  minPacketCount: '',
+  maxPacketCount: '',
+  minBytes: '',
+  maxBytes: '',
+  minWindowSeconds: '',
+  alertId: '',
+  acknowledged: '',
+  limit: '50000',
+};
 
 @Component({
   selector: 'app-reports-page',
@@ -56,19 +86,7 @@ export class ReportsPageComponent implements OnInit {
   meta: FilterMeta | null = null;
   curated: CuratedReport[] = [];
 
-  filters: Filters = {
-    from: '',
-    to: '',
-    severity: '',
-    type: '',
-    protocol: '',
-    sourceIp: '',
-    destinationIp: '',
-    deviceId: '',
-    destinationPort: '',
-    acknowledged: '',
-    limit: '50000',
-  };
+  filters: Filters = { ...EMPTY_FILTERS };
 
   preview: PreviewResponse | null = null;
   previewing = false;
@@ -114,6 +132,7 @@ export class ReportsPageComponent implements OnInit {
         p.set(k, v.trim());
       }
     };
+    add('search', f.search);
     add('from', f.from);
     add('to', f.to);
     add('severity', f.severity);
@@ -122,7 +141,14 @@ export class ReportsPageComponent implements OnInit {
     add('sourceIp', f.sourceIp);
     add('destinationIp', f.destinationIp);
     add('deviceId', f.deviceId);
+    add('sourcePort', f.sourcePort);
     add('destinationPort', f.destinationPort);
+    add('minPacketCount', f.minPacketCount);
+    add('maxPacketCount', f.maxPacketCount);
+    add('minBytes', f.minBytes);
+    add('maxBytes', f.maxBytes);
+    add('minWindowSeconds', f.minWindowSeconds);
+    add('alertId', f.alertId);
     if (f.acknowledged === 'true' || f.acknowledged === 'false') {
       p.set('acknowledged', f.acknowledged);
     }
@@ -132,17 +158,9 @@ export class ReportsPageComponent implements OnInit {
 
   resetFilters(): void {
     this.filters = {
+      ...EMPTY_FILTERS,
       from: this.meta?.dateRange.min ?? '',
       to: this.meta?.dateRange.max ?? '',
-      severity: '',
-      type: '',
-      protocol: '',
-      sourceIp: '',
-      destinationIp: '',
-      deviceId: '',
-      destinationPort: '',
-      acknowledged: '',
-      limit: '50000',
     };
     this.preview = null;
     this.previewError = '';

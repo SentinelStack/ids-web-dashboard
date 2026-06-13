@@ -24,6 +24,15 @@
         <div class="filter-card card">
           <h3 class="cap"><span class="material-symbols-outlined">filter_alt</span>Export Filters</h3>
 
+          <label class="search-row">
+            <span class="material-symbols-outlined">search</span>
+            <input
+              type="text"
+              placeholder="Search source/destination IP, alert ID or description…"
+              [(ngModel)]="filters.search"
+            />
+          </label>
+
           <div class="filter-grid">
             <label>
               <span>From</span>
@@ -91,8 +100,36 @@
               <input type="text" placeholder="e.g. edge-router-01" [(ngModel)]="filters.deviceId" />
             </label>
             <label>
+              <span>Source Port</span>
+              <input type="number" placeholder="e.g. 53" [(ngModel)]="filters.sourcePort" />
+            </label>
+            <label>
               <span>Dest. Port</span>
               <input type="number" placeholder="e.g. 443" [(ngModel)]="filters.destinationPort" />
+            </label>
+            <label>
+              <span>Min Packets</span>
+              <input type="number" placeholder="≥" [(ngModel)]="filters.minPacketCount" />
+            </label>
+            <label>
+              <span>Max Packets</span>
+              <input type="number" placeholder="≤" [(ngModel)]="filters.maxPacketCount" />
+            </label>
+            <label>
+              <span>Min Bytes</span>
+              <input type="number" placeholder="≥" [(ngModel)]="filters.minBytes" />
+            </label>
+            <label>
+              <span>Max Bytes</span>
+              <input type="number" placeholder="≤" [(ngModel)]="filters.maxBytes" />
+            </label>
+            <label>
+              <span>Min Window (s)</span>
+              <input type="number" placeholder="≥" [(ngModel)]="filters.minWindowSeconds" />
+            </label>
+            <label>
+              <span>Alert ID</span>
+              <input type="text" placeholder="exact UUID" [(ngModel)]="filters.alertId" />
             </label>
             <label>
               <span>Row Limit</span>
