@@ -83,7 +83,13 @@
         >
           <span class="material-symbols-outlined">download</span>Data Export
         </a>
-        <a><span class="material-symbols-outlined">hub</span>Topology</a>
+        <a
+          routerLink="/app/topology"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          <span class="material-symbols-outlined">hub</span>Topology
+        </a>
         <a><span class="material-symbols-outlined">gavel</span>Rules</a>
       </nav>
 

@@ -1,0 +1,260 @@
+@if (loaded) {
+  <div class="topology-page fade-in">
+    <!-- PAGE HEADER -->
+    <div class="page-head">
+      <div>
+        <h1>Network &amp; Processing Topology</h1>
+        <p>Visualize edge devices, backend services and event-processing flows.</p>
+      </div>
+    </div>
+
+    <!-- KPI ROW -->
+    <div class="kpi-row">
+      @for (k of kpis; track k.label) {
+        <div class="card kpi {{ k.tone }}">
+          <p class="kpi-label">{{ k.label }}</p>
+          <div class="kpi-value">
+            <span class="value">{{ k.value }}</span>
+            <span class="unit">{{ k.unit }}</span>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- ACTION STRIP -->
+    <div class="action-strip">
+      <div class="filters">
+        @for (f of filters; track f) {
+          <button class="chip" [class.active]="f === activeFilter" (click)="activeFilter = f">
+            {{ f }}
+          </button>
+        }
+      </div>
+      <div class="tools">
+        <button><span class="material-symbols-outlined">refresh</span>Refresh</button>
+        <button><span class="material-symbols-outlined">ios_share</span>Export</button>
+        <button><span class="material-symbols-outlined">visibility</span>View Path</button>
+      </div>
+    </div>
+
+    <!-- CANVAS + SIDEBAR -->
+    <div class="stage">
+      <div class="card canvas">
+        <!-- Flow overlay -->
+        <svg class="flows" preserveAspectRatio="none" viewBox="0 0 1000 600">
+          <!-- Normal flow (cyan) -->
+          <path class="flow primary" d="M 80 110 L 230 250" />
+          <path class="flow primary" d="M 230 250 L 470 250" />
+          <path class="flow primary" d="M 470 250 L 620 360" />
+          <path class="flow primary" d="M 620 360 L 840 200" />
+          <!-- Analytics flow (purple) -->
+          <path class="flow secondary" d="M 620 360 L 620 170 L 760 170" />
+          <path class="flow secondary" d="M 760 170 L 840 360" />
+          <!-- Incident path (red, animated) -->
+          <path class="flow incident" d="M 80 110 L 230 250 L 470 250 L 620 360" />
+        </svg>
+
+        <!-- DDoS annotation -->
+        <div class="annotation" style="left: 24%; top: 30%">
+          <span class="material-symbols-outlined">warning</span>
+          DDoS anomaly path
+        </div>
+
+        <!-- LAYER 1: EDGE -->
+        <div class="node icon-node" style="left: 5%; top: 13%" (click)="select('edge-router')">
+          <div class="glyph">
+            <span class="material-symbols-outlined">cloud_queue</span>
+          </div>
+          <span class="node-label">External WAN</span>
+        </div>
+
+        <button
+          class="node router-node"
+          style="left: 16%; top: 38%"
+          [class.selected]="selectedId === 'edge-router'"
+          (click)="select('edge-router')"
+        >
+          <span class="material-symbols-outlined">router</span>
+          <span class="badge">Degraded</span>
+          <span class="node-label below">OpenWrt GW</span>
+        </button>
+
+        <div class="node icon-node" style="left: 5%; top: 68%">
+          <div class="glyph muted">
+            <span class="material-symbols-outlined">lan</span>
+          </div>
+          <span class="node-label">LAN Segment</span>
+        </div>
+
+        <!-- LAYER 2: BACKEND -->
+        <div class="node chip-node muted" style="left: 35%; top: 18%">
+          <span class="material-symbols-outlined">hub</span>
+          <span>API Gateway</span>
+        </div>
+
+        <button
+          class="node svc-node"
+          style="left: 33%; top: 40%"
+          [class.selected]="selectedId === 'ingestion'"
+          (click)="select('ingestion')"
+        >
+          <div class="svc-top">
+            <span class="material-symbols-outlined">api</span>
+            <span>Ingestion</span>
+          </div>
+          <div class="svc-bar"><i style="width: 70%"></i></div>
+        </button>
+
+        <!-- LAYER 3: PIPELINE -->
+        <button
+          class="node kafka-node"
+          style="left: 52%; top: 52%"
+          [class.selected]="selectedId === 'kafka'"
+          (click)="select('kafka')"
+        >
+          <div class="kafka-top">
+            <span class="material-symbols-outlined">mediation</span>
+            <span>Kafka Broker</span>
+          </div>
+          <div class="topics">
+            <span>edge.metrics</span>
+            <span class="hot">traffic.anomalies</span>
+            <span>security.alerts</span>
+          </div>
+        </button>
+
+        <button
+          class="node chip-node tall"
+          style="left: 60%; top: 22%"
+          [class.selected]="selectedId === 'flink'"
+          (click)="select('flink')"
+        >
+          <div class="row">
+            <span class="material-symbols-outlined secondary">bolt</span>
+            <span class="secondary">Flink Proc</span>
+          </div>
+          <small>1.2k events/s</small>
+        </button>
+
+        <!-- LAYER 4: CONSUMERS / STORAGE -->
+        <button
+          class="node store-node circle"
+          style="left: 80%; top: 22%"
+          [class.selected]="selectedId === 'op-db'"
+          (click)="select('op-db')"
+        >
+          <span class="material-symbols-outlined">database</span>
+          <small>Op_DB</small>
+        </button>
+
+        <button
+          class="node store-node"
+          style="left: 82%; top: 52%"
+          [class.selected]="selectedId === 'ai-sum'"
+          (click)="select('ai-sum')"
+        >
+          <span class="material-symbols-outlined secondary">memory</span>
+          <small>AI_SUM</small>
+        </button>
+
+        <!-- Layer labels -->
+        <div class="layer-labels">
+          <span>L1: EDGE ARCH</span>
+          <span>L2: BACKEND</span>
+          <span>L3: PIPELINE</span>
+          <span>L4: CONSUMERS</span>
+        </div>
+      </div>
+
+      <!-- RIGHT SIDEBAR -->
+      <aside class="inspector">
+        <div class="card detail" [class.alarm]="selected.statusTone === 'error'">
+          <div class="detail-head">
+            <div>
+              <h2 [class.error]="selected.statusTone === 'error'">{{ selected.name }}</h2>
+              <p class="mono">ID: {{ selected.id }}</p>
+            </div>
+            @if (selected.statusTone !== 'ok') {
+              <span class="material-symbols-outlined error">warning</span>
+            }
+          </div>
+
+          <div class="detail-grid">
+            <div>
+              <p class="k">Status</p>
+              <span class="v tone-{{ selected.statusTone }}">{{ selected.status }}</span>
+            </div>
+            <div>
+              <p class="k">Load</p>
+              <span class="v mono">{{ selected.load }}</span>
+            </div>
+            <div>
+              <p class="k">Risk</p>
+              <span class="v tone-{{ selected.riskTone }}">{{ selected.risk }}</span>
+            </div>
+            <div>
+              <p class="k">IP Address</p>
+              <span class="v mono">{{ selected.ip }}</span>
+            </div>
+            <div class="span-2">
+              <p class="k">Activity</p>
+              <span class="v mono small">{{ selected.activity }}</span>
+            </div>
+          </div>
+
+          <div class="detections">
+            <p class="k">Active Detections</p>
+            @if (selected.detections.length === 0) {
+              <p class="empty mono">No active detections.</p>
+            }
+            @for (d of selected.detections; track d.label) {
+              <div class="det {{ d.level }}">
+                <span class="dot"></span>
+                <span>{{ d.label }}</span>
+              </div>
+            }
+          </div>
+
+          <div class="detail-actions">
+            <button class="danger">Quarantine Node</button>
+            <div class="split">
+              <button>Path View</button>
+              <button>Forensics</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card health">
+          <p class="k">Dependency Health</p>
+          <div class="health-list">
+            @for (dep of dependencies; track dep.label) {
+              <div class="dep">
+                <span class="dep-label">{{ dep.label }}</span>
+                <div class="dep-bar">
+                  <i class="tone-{{ dep.tone }}" [style.width.%]="dep.pct"></i>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- LIVE FEED -->
+    <div class="card feed">
+      <div class="feed-head">
+        <p class="k"><span class="live-dot"></span>Topology Events (Live Feed)</p>
+        <span class="mono auto">AUTO_REFRESH: ON</span>
+      </div>
+      <div class="feed-body">
+        @for (e of feed; track $index) {
+          <p class="line tone-{{ e.tone }}">
+            <span class="ts">[{{ e.time }}]</span>
+            <span class="kind">{{ e.kind }}</span
+            >: {{ e.message }}
+          </p>
+        }
+      </div>
+    </div>
+  </div>
+}
