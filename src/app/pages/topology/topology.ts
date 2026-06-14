@@ -1,4 +1,6 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+
+import { HateoasService } from '../../core/services/hateoas.service';
 
 interface Kpi {
   label: string;
@@ -31,12 +33,32 @@ interface Dependency {
   tone: 'primary' | 'secondary' | 'error';
 }
 
+type FeedTone = 'primary' | 'secondary' | 'error' | 'warning' | 'muted';
+
 interface FeedEvent {
   time: string;
   kind: string;
   message: string;
-  tone: 'primary' | 'secondary' | 'error' | 'warning' | 'muted';
+  tone: FeedTone;
 }
+
+/** GET /api/console/topology/events — real domain events. */
+interface TopologyEventDto {
+  at: string;
+  kind: string;
+  message: string;
+  tone: string;
+}
+
+/** GET /api/console/topology/logs — the backend's own runtime log lines. */
+interface RuntimeLogDto {
+  at: string;
+  level: string;
+  logger: string;
+  message: string;
+}
+
+type FeedMode = 'events' | 'logs';
 
 @Component({
   selector: 'app-topology-page',
@@ -44,9 +66,13 @@ interface FeedEvent {
   styleUrl: './topology.scss',
 })
 export class TopologyPageComponent implements OnInit, OnDestroy {
+  private static readonly REFRESH_MS = 6000;
+  private readonly hateoas = inject(HateoasService);
   private feedTimer?: ReturnType<typeof setInterval>;
 
   loaded = false;
+  feedMode: FeedMode = 'events';
+  feedError = false;
 
   readonly kpis: Kpi[] = [
     { label: 'Active Edge Agents', value: '12', unit: '11H / 1D', tone: 'primary' },
@@ -67,50 +93,7 @@ export class TopologyPageComponent implements OnInit, OnDestroy {
     { label: 'Alert → Dashboard', pct: 95, tone: 'secondary' },
   ];
 
-  feed: FeedEvent[] = [
-    {
-      time: '14:22:01',
-      kind: 'NODE_UP',
-      message: 'Edge-Agent-09 registered on 10.0.4.122',
-      tone: 'primary',
-    },
-    {
-      time: '14:22:05',
-      kind: 'ANOMALY_DETECTION',
-      message: 'Rapid SYN packets detected on EDGE-ROUTER-01',
-      tone: 'error',
-    },
-    {
-      time: '14:22:08',
-      kind: 'STREAM_PROC',
-      message: 'Batch analytics for spark.job_882 completed',
-      tone: 'secondary',
-    },
-    {
-      time: '14:22:12',
-      kind: 'LATENCY_SPIKE',
-      message: 'Edge-to-Ingestion latency exceeded 500ms for L1 segment',
-      tone: 'error',
-    },
-    {
-      time: '14:22:15',
-      kind: 'POLICY_SYNC',
-      message: "Applied 'Zero Trust Policy v4' to 18 assets",
-      tone: 'primary',
-    },
-    {
-      time: '14:22:19',
-      kind: 'HEARTBEAT',
-      message: 'All 12 Edge Agents responding...',
-      tone: 'muted',
-    },
-    {
-      time: '14:22:24',
-      kind: 'DEVICE_WARN',
-      message: 'OpenWrt-GW (192.168.1.1) reporting high resource pressure',
-      tone: 'warning',
-    },
-  ];
+  feed: FeedEvent[] = [];
 
   private readonly nodes: Record<string, NodeDetail> = {
     'edge-router': {
@@ -194,9 +177,10 @@ export class TopologyPageComponent implements OnInit, OnDestroy {
   selectedId = 'edge-router';
   selected: NodeDetail = this.nodes['edge-router'];
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     this.loaded = true;
-    this.feedTimer = setInterval(() => this.tickFeed(), 6000);
+    await this.loadFeed();
+    this.feedTimer = setInterval(() => void this.loadFeed(), TopologyPageComponent.REFRESH_MS);
   }
 
   ngOnDestroy(): void {
@@ -213,15 +197,66 @@ export class TopologyPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  private tickFeed(): void {
-    const now = new Date();
-    const time = now.toLocaleTimeString('en-GB', { hour12: false });
-    const beat: FeedEvent = {
-      time,
-      kind: 'HEARTBEAT',
-      message: 'All 12 Edge Agents responding...',
-      tone: 'muted',
-    };
-    this.feed = [beat, ...this.feed].slice(0, 30);
+  setMode(mode: FeedMode): void {
+    if (mode !== this.feedMode) {
+      this.feedMode = mode;
+      void this.loadFeed();
+    }
+  }
+
+  /** Pull the live feed for the active mode (real domain events or raw logs). */
+  private async loadFeed(): Promise<void> {
+    try {
+      this.feed = this.feedMode === 'events' ? await this.loadEvents() : await this.loadLogs();
+      this.feedError = false;
+    } catch {
+      this.feedError = true;
+    }
+  }
+
+  private async loadEvents(): Promise<FeedEvent[]> {
+    const res = await this.hateoas.follow<{ content: TopologyEventDto[] }>('topology-events');
+    return (res?.data?.content ?? []).map((e) => ({
+      time: this.timeOf(e.at),
+      kind: e.kind,
+      message: e.message,
+      tone: this.asTone(e.tone),
+    }));
+  }
+
+  private async loadLogs(): Promise<FeedEvent[]> {
+    const res = await this.hateoas.follow<{ content: RuntimeLogDto[] }>('topology-logs');
+    return (res?.data?.content ?? []).map((l) => ({
+      time: this.timeOf(l.at),
+      kind: l.level,
+      message: `${l.logger} — ${l.message}`,
+      tone: this.toneOfLevel(l.level),
+    }));
+  }
+
+  private timeOf(at?: string): string {
+    if (!at) {
+      return '';
+    }
+    const d = new Date(at);
+    return Number.isNaN(d.getTime()) ? '' : d.toLocaleTimeString('en-GB', { hour12: false });
+  }
+
+  private asTone(tone: string): FeedTone {
+    const allowed: FeedTone[] = ['primary', 'secondary', 'error', 'warning', 'muted'];
+    return (allowed as string[]).includes(tone) ? (tone as FeedTone) : 'muted';
+  }
+
+  private toneOfLevel(level: string): FeedTone {
+    switch (level.toUpperCase()) {
+      case 'ERROR':
+        return 'error';
+      case 'WARN':
+        return 'warning';
+      case 'INFO':
+        return 'primary';
+      default:
+        return 'muted';
+    }
   }
 }

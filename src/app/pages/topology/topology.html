@@ -243,8 +243,19 @@
     <!-- LIVE FEED -->
     <div class="card feed">
       <div class="feed-head">
-        <p class="k"><span class="live-dot"></span>Topology Events (Live Feed)</p>
-        <span class="mono auto">AUTO_REFRESH: ON</span>
+        <p class="k">
+          <span class="live-dot"></span>
+          {{ feedMode === 'events' ? 'Topology Events (Live Feed)' : 'Runtime Logs (Backend)' }}
+        </p>
+        <div class="feed-controls">
+          <div class="toggle">
+            <button [class.active]="feedMode === 'events'" (click)="setMode('events')">
+              Events
+            </button>
+            <button [class.active]="feedMode === 'logs'" (click)="setMode('logs')">Logs</button>
+          </div>
+          <span class="mono auto">AUTO_REFRESH: ON</span>
+        </div>
       </div>
       <div class="feed-body">
         @for (e of feed; track $index) {
@@ -252,6 +263,11 @@
             <span class="ts">[{{ e.time }}]</span>
             <span class="kind">{{ e.kind }}</span
             >: {{ e.message }}
+          </p>
+        }
+        @if (feed.length === 0) {
+          <p class="line tone-muted">
+            {{ feedError ? '// feed unavailable — retrying…' : '// waiting for live events…' }}
           </p>
         }
       </div>
