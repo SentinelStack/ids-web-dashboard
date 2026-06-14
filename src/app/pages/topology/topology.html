@@ -46,19 +46,62 @@
     <!-- CANVAS + SIDEBAR -->
     <div class="stage">
       <div class="card canvas">
-        <!-- Flow overlay -->
+        <!-- Flow overlay: smooth curves connecting node centres -->
         <svg class="flows" preserveAspectRatio="none" viewBox="0 0 1000 600">
-          <!-- Normal flow (cyan) -->
-          <path class="flow primary" d="M 80 110 L 230 250" />
-          <path class="flow primary" d="M 230 250 L 470 250" />
-          <path class="flow primary" d="M 470 250 L 620 360" />
-          <path class="flow primary" d="M 620 360 L 840 200" />
-          <!-- Analytics flow (purple) -->
-          <path class="flow secondary" d="M 620 360 L 620 170 L 760 170" />
-          <path class="flow secondary" d="M 760 170 L 840 360" />
-          <!-- Incident path (red, animated) -->
+          <defs>
+            <linearGradient id="flowCyan" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#7fdcff" stop-opacity="0.04" />
+              <stop offset="0.5" stop-color="#7fdcff" stop-opacity="0.5" />
+              <stop offset="1" stop-color="#7fdcff" stop-opacity="0.04" />
+            </linearGradient>
+            <linearGradient id="flowPurple" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#ddb7ff" stop-opacity="0.04" />
+              <stop offset="0.5" stop-color="#ddb7ff" stop-opacity="0.45" />
+              <stop offset="1" stop-color="#ddb7ff" stop-opacity="0.04" />
+            </linearGradient>
+          </defs>
+
+          <!-- Ingest route: WAN → OpenWrt GW → Ingestion → Kafka -->
+          <path
+            class="flow primary"
+            stroke="url(#flowCyan)"
+            d="M 70 96 C 150 150 150 215 180 252 S 350 235 400 264 S 545 320 580 360"
+          />
+          <!-- Consumer fan-out: Kafka → AI_SUM -->
+          <path
+            class="flow primary"
+            stroke="url(#flowCyan)"
+            d="M 580 360 C 680 352 760 342 840 336"
+          />
+          <!-- Analytics pipeline: Kafka → Flink → Op_DB → AI_SUM -->
+          <path
+            class="flow secondary"
+            stroke="url(#flowPurple)"
+            d="M 580 360 C 605 280 625 215 640 156"
+          />
+          <path
+            class="flow secondary"
+            stroke="url(#flowPurple)"
+            d="M 640 156 C 710 148 755 148 820 156"
+          />
+          <path
+            class="flow secondary"
+            stroke="url(#flowPurple)"
+            d="M 820 156 C 855 225 845 285 840 336"
+          />
+
+          <!-- Animated data pulse travelling the ingest route -->
+          <path
+            class="flow stream"
+            d="M 70 96 C 150 150 150 215 180 252 S 350 235 400 264 S 545 320 580 360"
+          />
+
+          <!-- Incident path (red, animated) overlays the ingest route -->
           @if (showIncidentPath) {
-            <path class="flow incident" d="M 80 110 L 230 250 L 470 250 L 620 360" />
+            <path
+              class="flow incident"
+              d="M 70 96 C 150 150 150 215 180 252 S 350 235 400 264 S 545 320 580 360"
+            />
           }
         </svg>
 
