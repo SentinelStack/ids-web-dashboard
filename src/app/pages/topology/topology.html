@@ -242,8 +242,19 @@
           </div>
 
           <div class="detail-actions">
-            <button class="danger" (click)="quarantine()" [disabled]="isQuarantined(selectedId)">
-              {{ isQuarantined(selectedId) ? 'Quarantined' : 'Quarantine Node' }}
+            <button
+              class="danger"
+              [class.release]="isQuarantined(selectedId)"
+              [disabled]="containing"
+              (click)="toggleContainment()"
+            >
+              {{
+                containing
+                  ? 'Working…'
+                  : isQuarantined(selectedId)
+                    ? 'Release Node'
+                    : 'Quarantine Node'
+              }}
             </button>
             <div class="split">
               <button [class.on]="showIncidentPath" (click)="toggleIncidentPath()">

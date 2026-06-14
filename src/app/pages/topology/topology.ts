@@ -1,6 +1,9 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 
+import { HalResource, linkHref } from '../../core/models/hateoas';
+import { ApiService } from '../../core/services/api.service';
 import { HateoasService } from '../../core/services/hateoas.service';
 
 interface Kpi {
@@ -18,6 +21,8 @@ interface Detection {
 interface NodeDetail {
   name: string;
   id: string;
+  /** The real backend deviceId, when this node maps to a registered device. */
+  deviceId?: string;
   category: Category;
   status: string;
   statusTone: 'ok' | 'warn' | 'error';
@@ -71,6 +76,7 @@ type Category = 'edge' | 'backend' | 'kafka' | 'storage';
 export class TopologyPageComponent implements OnInit, OnDestroy {
   private static readonly REFRESH_MS = 6000;
   private readonly hateoas = inject(HateoasService);
+  private readonly api = inject(ApiService);
   private readonly router = inject(Router);
   private feedTimer?: ReturnType<typeof setInterval>;
 
@@ -108,6 +114,7 @@ export class TopologyPageComponent implements OnInit, OnDestroy {
     'edge-router': {
       name: 'OpenWrt Edge Gateway',
       id: 'EDGE-ROUTER-01',
+      deviceId: 'edge-router-01',
       category: 'edge',
       status: 'Degraded',
       statusTone: 'error',
@@ -267,22 +274,67 @@ export class TopologyPageComponent implements OnInit, OnDestroy {
     return this.quarantined.has(id);
   }
 
-  /** Contain the selected node: mark it quarantined and log it to the feed. */
-  quarantine(): void {
-    if (this.isQuarantined(this.selectedId)) {
+  containing = false;
+
+  /** Toggle containment for the selected node (quarantine ⇄ release). */
+  async toggleContainment(): Promise<void> {
+    if (this.containing) {
       return;
     }
-    this.quarantined.add(this.selectedId);
-    this.selected.status = 'Quarantined';
-    this.selected.statusTone = 'warn';
-    this.selected.risk = 'Contained';
-    this.selected.riskTone = 'ok';
-    this.selected.detections = [];
+    this.containing = true;
+    const quarantining = !this.isQuarantined(this.selectedId);
+    try {
+      // Device-backed nodes hit the real backend action (state isolation);
+      // conceptual nodes (Kafka/Flink/…) toggle locally only.
+      if (this.selected.deviceId) {
+        await this.callContainment(this.selected.deviceId, quarantining ? 'quarantine' : 'release');
+      }
+      this.applyContainment(quarantining);
+    } catch {
+      this.feedError = true;
+    } finally {
+      this.containing = false;
+    }
+  }
+
+  /** Follow the device's state-aware HATEOAS action link and POST it. */
+  private async callContainment(deviceId: string, rel: 'quarantine' | 'release'): Promise<void> {
+    const res = await this.hateoas.follow<{ content: ({ deviceId: string } & HalResource)[] }>(
+      'devices',
+    );
+    const device = (res?.data?.content ?? []).find((d) => d.deviceId === deviceId);
+    const href = device ? linkHref(device, rel) : undefined;
+    if (!href) {
+      throw new Error(`No ${rel} link for ${deviceId}`);
+    }
+    await firstValueFrom(this.api.post(href, {}));
+    // Reflect the new server state in the feed immediately.
+    await this.loadFeed();
+  }
+
+  /** Update local node/inspector state to match the new containment status. */
+  private applyContainment(quarantining: boolean): void {
+    if (quarantining) {
+      this.quarantined.add(this.selectedId);
+      this.selected.status = 'Quarantined';
+      this.selected.statusTone = 'warn';
+      this.selected.risk = 'Contained';
+      this.selected.riskTone = 'ok';
+      this.selected.detections = [];
+    } else {
+      this.quarantined.delete(this.selectedId);
+      this.selected.status = 'Online';
+      this.selected.statusTone = 'ok';
+      this.selected.risk = 'Low';
+      this.selected.riskTone = 'ok';
+    }
     const event: FeedEvent = {
       time: new Date().toLocaleTimeString('en-GB', { hour12: false }),
-      kind: 'CONTAINMENT',
-      message: `${this.selected.name} (${this.selected.id}) quarantined by operator`,
-      tone: 'primary',
+      kind: quarantining ? 'QUARANTINE' : 'RELEASE',
+      message: quarantining
+        ? `${this.selected.name} (${this.selected.id}) quarantined by operator`
+        : `${this.selected.name} (${this.selected.id}) released from quarantine`,
+      tone: quarantining ? 'primary' : 'muted',
     };
     this.feed = [event, ...this.feed].slice(0, 50);
   }

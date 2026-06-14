@@ -734,6 +734,11 @@ $muted-2: #90a2bb;
       filter: brightness(1.1);
     }
 
+    &.release {
+      background: rgb(41 216 255 / 16%);
+      color: $cyan;
+    }
+
     &:disabled {
       background: rgb(255 206 107 / 18%);
       color: $amber;
