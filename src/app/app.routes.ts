@@ -5,6 +5,7 @@ import { DashboardPageComponent } from './pages/dashboard/dashboard';
 import { IncidentsPageComponent } from './pages/incidents/incidents';
 import { LoginPageComponent } from './pages/login/login';
 import { ReportsPageComponent } from './pages/reports/reports';
+import { RulesPageComponent } from './pages/rules/rules';
 import { TopologyPageComponent } from './pages/topology/topology';
 import { TrafficPageComponent } from './pages/traffic/traffic';
 
@@ -21,6 +22,7 @@ export const routes: Routes = [
       { path: 'incidents', component: IncidentsPageComponent },
       { path: 'reports', component: ReportsPageComponent },
       { path: 'topology', component: TopologyPageComponent },
+      { path: 'rules', component: RulesPageComponent },
     ],
   },
   { path: '**', redirectTo: 'login' },

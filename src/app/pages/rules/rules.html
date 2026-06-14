@@ -1,0 +1,280 @@
+@if (loaded) {
+  <div class="rules-page fade-in">
+    <div class="page-head">
+      <h1>OpenWrt Edge Detection Rules</h1>
+      <p>Manage lightweight detection and response rules executed directly on edge routers.</p>
+    </div>
+
+    <!-- KPI ROW -->
+    <div class="kpi-row">
+      <div class="card kpi primary">
+        <p class="kpi-label">Active Router Rules</p>
+        <div class="kpi-value">
+          <span class="value">{{ kpis.activeRouterRules }}</span
+          ><span class="tag">SYNCED</span>
+        </div>
+      </div>
+      <div class="card kpi secondary">
+        <p class="kpi-label">Edge Agents Synced</p>
+        <div class="kpi-value">
+          <span class="value">{{ kpis.agentsSynced }}</span
+          ><span class="tag">AGENTS</span>
+        </div>
+      </div>
+      <div class="card kpi error">
+        <p class="kpi-label">Rules Triggered (24h)</p>
+        <div class="kpi-value">
+          <span class="value">{{ kpis.rulesTriggeredToday }}</span
+          ><span class="tag">LOCAL</span>
+        </div>
+      </div>
+      <div class="card kpi accent">
+        <p class="kpi-label">Avg Evaluation Time</p>
+        <div class="kpi-value">
+          <span class="value">{{ kpis.avgEvaluationMs }}</span
+          ><span class="unit">ms</span>
+        </div>
+      </div>
+      <div class="card kpi primary">
+        <p class="kpi-label">Local Mitigations</p>
+        <div class="kpi-value">
+          <span class="value">{{ kpis.localMitigations }}</span
+          ><span class="tag">MITIGATED</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="grid">
+      <!-- LEFT: scope & filters -->
+      <aside class="left">
+        <div class="card panel">
+          <h3><span class="material-symbols-outlined">router</span> Router Inventory</h3>
+          <div class="inventory">
+            @for (d of devices; track d.deviceId) {
+              <div class="inv-item">
+                <div class="inv-id">
+                  <span class="mono">{{ d.deviceId }}</span>
+                  <span class="mono dim">{{ d.ipAddress || '—' }}</span>
+                </div>
+                <span class="status tone-{{ deviceStatusTone(d.status) }}">{{ d.status }}</span>
+              </div>
+            }
+            @if (devices.length === 0) {
+              <p class="empty mono">No routers registered.</p>
+            }
+          </div>
+        </div>
+
+        <div class="card panel">
+          <h3><span class="material-symbols-outlined">lan</span> Interface Scope</h3>
+          <div class="chips">
+            @for (i of interfaceScopes; track i) {
+              <span class="chip mono" [class.on]="i === 'wan'">{{ i }}</span>
+            }
+          </div>
+        </div>
+
+        <div class="card panel">
+          <h3><span class="material-symbols-outlined">filter_list</span> Rule Filters</h3>
+          <div class="chips">
+            @for (f of filters; track f.label) {
+              <button
+                class="chip"
+                [class.active]="f.label === activeFilter"
+                (click)="setFilter(f.label)"
+              >
+                {{ f.label }}
+              </button>
+            }
+          </div>
+          <input class="search" type="text" placeholder="Search rules…" [(ngModel)]="search" />
+        </div>
+      </aside>
+
+      <!-- CENTER: rules library -->
+      <section class="card library">
+        <div class="lib-head">
+          <h3>Router Rules Library</h3>
+          <span class="mono count">{{ visibleRules.length }} DEFINITIONS</span>
+        </div>
+        <div class="lib-body">
+          <table>
+            <thead>
+              <tr>
+                <th>Rule</th>
+                <th class="c">Interface</th>
+                <th class="c">Severity</th>
+                <th class="c">Mode</th>
+                <th class="c">Status</th>
+                <th class="r">Matches</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of visibleRules; track r.ruleId) {
+                <tr [class.sel]="selected?.ruleId === r.ruleId" (click)="select(r)">
+                  <td>
+                    <div class="rule-name">{{ r.name }}</div>
+                    <div class="rule-signal mono">{{ r.signal }}</div>
+                  </td>
+                  <td class="c mono dim">{{ r.interfaceScope }}</td>
+                  <td class="c">
+                    <span class="sev tone-{{ severityTone(r.severity) }}">{{ r.severity }}</span>
+                  </td>
+                  <td class="c dim">{{ modeLabel(r.mode) }}</td>
+                  <td class="c">
+                    <span class="state" [class.off]="!r.enabled">
+                      <i></i>{{ r.enabled ? 'ENABLED' : 'DISABLED' }}
+                    </span>
+                  </td>
+                  <td class="r mono">{{ r.matches }}</td>
+                </tr>
+              }
+              @if (visibleRules.length === 0) {
+                <tr>
+                  <td colspan="6" class="empty mono">No rules match this filter.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="lib-foot">
+          <span class="mono dim">EDGE KERNEL v5.15</span>
+          <span class="mono ok">RULESET PULLED BY AGENTS ON HEARTBEAT</span>
+        </div>
+      </section>
+
+      <!-- RIGHT: rule details -->
+      <aside class="right">
+        @if (selected; as s) {
+          <div class="card detail">
+            <div class="detail-head">
+              <h3>RULE DETAILS</h3>
+              <span class="sev tone-{{ severityTone(s.severity) }}">{{ s.severity }}</span>
+            </div>
+            <h2>{{ s.name }}</h2>
+            <p class="mono sub">{{ s.ruleId }} | {{ s.version }}</p>
+
+            <div class="kv">
+              <div>
+                <p class="k">Status</p>
+                <span class="state" [class.off]="!s.enabled"
+                  ><i></i>{{ s.enabled ? 'ENABLED' : 'DISABLED' }}</span
+                >
+              </div>
+              <div>
+                <p class="k">Target Router</p>
+                <span class="mono">{{ s.targetDeviceId || 'ALL' }}</span>
+              </div>
+            </div>
+
+            <div class="block">
+              <p class="k">Rule Logic</p>
+              <div class="logic mono">
+                @for (line of s.logic; track $index) {
+                  <div>{{ line }}</div>
+                }
+              </div>
+            </div>
+
+            <div class="block">
+              <p class="k">Thresholds (applied on router)</p>
+              <div class="thresholds">
+                @for (t of thresholdEntries(s); track t.key) {
+                  <span class="thr mono">{{ t.key }} = {{ t.value }}</span>
+                }
+                @if (thresholdEntries(s).length === 0) {
+                  <span class="empty mono">none</span>
+                }
+              </div>
+            </div>
+
+            <div class="block">
+              <p class="k">Local Actions</p>
+              <div class="actions">
+                @for (a of s.actions; track a) {
+                  <span class="act" [class.mit]="isMitigation(a)">{{ actionLabel(a) }}</span>
+                }
+              </div>
+            </div>
+
+            <div class="block impact">
+              <p class="k">Resource Impact</p>
+              <div class="impact-grid">
+                <div>
+                  <p class="im-k">CPU</p>
+                  <p class="im-v">{{ s.cpuImpact }}</p>
+                </div>
+                <div>
+                  <p class="im-k">MEM</p>
+                  <p class="im-v">{{ s.memImpact }}</p>
+                </div>
+                <div>
+                  <p class="im-k">EVAL</p>
+                  <p class="im-v">{{ s.evalMs }}ms</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail-actions">
+              <button class="deploy" [disabled]="busy" (click)="deploy()">
+                {{ busy ? 'Working…' : 'Deploy to Router' }}
+              </button>
+              <button
+                class="toggle"
+                [class.danger]="s.enabled"
+                [disabled]="busy"
+                (click)="toggleEnabled()"
+              >
+                {{ s.enabled ? 'Disable' : 'Enable' }}
+              </button>
+            </div>
+          </div>
+        }
+      </aside>
+    </div>
+
+    <!-- BOTTOM: feed + status -->
+    <div class="bottom">
+      <div class="card feed">
+        <div class="feed-head">
+          <p class="k"><span class="live-dot"></span> Router Rule Trigger Feed</p>
+          <span class="mono dim">LIVE CONNECTION STABLE</span>
+        </div>
+        <div class="feed-body">
+          @for (t of triggers; track $index) {
+            <p class="line tone-{{ t.tone }}">
+              <span class="ts">{{ t.time }}</span>
+              <span class="rid">{{ t.ruleId }}</span>
+              <span class="dim">matched</span>
+              <span class="dev">{{ t.deviceId }}</span>
+              <span class="dim">{{ t.interfaceScope }}</span>
+              <span class="metric">{{ t.signal }} {{ t.value }}</span>
+            </p>
+          }
+          @if (triggers.length === 0) {
+            <p class="line tone-muted">// no rule matches yet…</p>
+          }
+        </div>
+      </div>
+
+      <div class="card status">
+        <h3>Global Status</h3>
+        <div class="st-row">
+          <span class="k">Active Rules</span
+          ><span class="mono ok">{{ kpis.activeRouterRules }}</span>
+        </div>
+        <div class="st-row">
+          <span class="k">Agents Synced</span><span class="mono">{{ kpis.agentsSynced }}</span>
+        </div>
+        <div class="st-row">
+          <span class="k">Avg Eval</span><span class="mono">{{ kpis.avgEvaluationMs }} ms</span>
+        </div>
+        <div class="st-row">
+          <span class="k">Heartbeat</span><span class="mono ok">NOMINAL</span>
+        </div>
+        <p class="note">Agents re-pull their ruleset every 60s and on heartbeat.</p>
+      </div>
+    </div>
+  </div>
+}

@@ -90,7 +90,13 @@
         >
           <span class="material-symbols-outlined">hub</span>Topology
         </a>
-        <a><span class="material-symbols-outlined">gavel</span>Rules</a>
+        <a
+          routerLink="/app/rules"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          <span class="material-symbols-outlined">gavel</span>Rules
+        </a>
       </nav>
 
       <nav class="menu secondary">
