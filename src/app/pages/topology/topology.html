@@ -25,15 +25,21 @@
     <div class="action-strip">
       <div class="filters">
         @for (f of filters; track f) {
-          <button class="chip" [class.active]="f === activeFilter" (click)="activeFilter = f">
+          <button class="chip" [class.active]="f === activeFilter" (click)="setFilter(f)">
             {{ f }}
           </button>
         }
       </div>
       <div class="tools">
-        <button><span class="material-symbols-outlined">refresh</span>Refresh</button>
-        <button><span class="material-symbols-outlined">ios_share</span>Export</button>
-        <button><span class="material-symbols-outlined">visibility</span>View Path</button>
+        <button (click)="refresh()" [disabled]="refreshing">
+          <span class="material-symbols-outlined" [class.spin]="refreshing">refresh</span> Refresh
+        </button>
+        <button (click)="exportSnapshot()">
+          <span class="material-symbols-outlined">ios_share</span> Export
+        </button>
+        <button (click)="toggleIncidentPath()" [class.on]="showIncidentPath">
+          <span class="material-symbols-outlined">visibility</span> View Path
+        </button>
       </div>
     </div>
 
@@ -51,111 +57,131 @@
           <path class="flow secondary" d="M 620 360 L 620 170 L 760 170" />
           <path class="flow secondary" d="M 760 170 L 840 360" />
           <!-- Incident path (red, animated) -->
-          <path class="flow incident" d="M 80 110 L 230 250 L 470 250 L 620 360" />
+          @if (showIncidentPath) {
+            <path class="flow incident" d="M 80 110 L 230 250 L 470 250 L 620 360" />
+          }
         </svg>
 
         <!-- DDoS annotation -->
-        <div class="annotation" style="left: 24%; top: 30%">
-          <span class="material-symbols-outlined">warning</span>
-          DDoS anomaly path
-        </div>
+        @if (showIncidentPath) {
+          <div class="annotation" style="left: 24%; top: 30%">
+            <span class="material-symbols-outlined">warning</span>
+            DDoS anomaly path
+          </div>
+        }
 
         <!-- LAYER 1: EDGE -->
-        <div class="node icon-node" style="left: 5%; top: 13%" (click)="select('edge-router')">
-          <div class="glyph">
-            <span class="material-symbols-outlined">cloud_queue</span>
+        @if (showCat('edge')) {
+          <div class="node icon-node" style="left: 5%; top: 13%" (click)="select('edge-router')">
+            <div class="glyph">
+              <span class="material-symbols-outlined">cloud_queue</span>
+            </div>
+            <span class="node-label">External WAN</span>
           </div>
-          <span class="node-label">External WAN</span>
-        </div>
 
-        <button
-          class="node router-node"
-          style="left: 16%; top: 38%"
-          [class.selected]="selectedId === 'edge-router'"
-          (click)="select('edge-router')"
-        >
-          <span class="material-symbols-outlined">router</span>
-          <span class="badge">Degraded</span>
-          <span class="node-label below">OpenWrt GW</span>
-        </button>
+          <button
+            class="node router-node"
+            style="left: 16%; top: 38%"
+            [class.selected]="selectedId === 'edge-router'"
+            [class.quarantined]="isQuarantined('edge-router')"
+            (click)="select('edge-router')"
+          >
+            <span class="material-symbols-outlined">router</span>
+            <span class="badge">{{
+              isQuarantined('edge-router') ? 'Quarantined' : 'Degraded'
+            }}</span>
+            <span class="node-label below">OpenWrt GW</span>
+          </button>
 
-        <div class="node icon-node" style="left: 5%; top: 68%">
-          <div class="glyph muted">
-            <span class="material-symbols-outlined">lan</span>
+          <div class="node icon-node" style="left: 5%; top: 68%">
+            <div class="glyph muted">
+              <span class="material-symbols-outlined">lan</span>
+            </div>
+            <span class="node-label">LAN Segment</span>
           </div>
-          <span class="node-label">LAN Segment</span>
-        </div>
+        }
 
         <!-- LAYER 2: BACKEND -->
-        <div class="node chip-node muted" style="left: 35%; top: 18%">
-          <span class="material-symbols-outlined">hub</span>
-          <span>API Gateway</span>
-        </div>
-
-        <button
-          class="node svc-node"
-          style="left: 33%; top: 40%"
-          [class.selected]="selectedId === 'ingestion'"
-          (click)="select('ingestion')"
-        >
-          <div class="svc-top">
-            <span class="material-symbols-outlined">api</span>
-            <span>Ingestion</span>
+        @if (showCat('backend')) {
+          <div class="node chip-node muted" style="left: 35%; top: 18%">
+            <span class="material-symbols-outlined">hub</span>
+            <span>API Gateway</span>
           </div>
-          <div class="svc-bar"><i style="width: 70%"></i></div>
-        </button>
+
+          <button
+            class="node svc-node"
+            style="left: 33%; top: 40%"
+            [class.selected]="selectedId === 'ingestion'"
+            [class.quarantined]="isQuarantined('ingestion')"
+            (click)="select('ingestion')"
+          >
+            <div class="svc-top">
+              <span class="material-symbols-outlined">api</span>
+              <span>Ingestion</span>
+            </div>
+            <div class="svc-bar"><i style="width: 70%"></i></div>
+          </button>
+        }
 
         <!-- LAYER 3: PIPELINE -->
-        <button
-          class="node kafka-node"
-          style="left: 52%; top: 52%"
-          [class.selected]="selectedId === 'kafka'"
-          (click)="select('kafka')"
-        >
-          <div class="kafka-top">
-            <span class="material-symbols-outlined">mediation</span>
-            <span>Kafka Broker</span>
-          </div>
-          <div class="topics">
-            <span>edge.metrics</span>
-            <span class="hot">traffic.anomalies</span>
-            <span>security.alerts</span>
-          </div>
-        </button>
+        @if (showCat('kafka')) {
+          <button
+            class="node kafka-node"
+            style="left: 52%; top: 52%"
+            [class.selected]="selectedId === 'kafka'"
+            [class.quarantined]="isQuarantined('kafka')"
+            (click)="select('kafka')"
+          >
+            <div class="kafka-top">
+              <span class="material-symbols-outlined">mediation</span>
+              <span>Kafka Broker</span>
+            </div>
+            <div class="topics">
+              <span>edge.metrics</span>
+              <span class="hot">traffic.anomalies</span>
+              <span>security.alerts</span>
+            </div>
+          </button>
 
-        <button
-          class="node chip-node tall"
-          style="left: 60%; top: 22%"
-          [class.selected]="selectedId === 'flink'"
-          (click)="select('flink')"
-        >
-          <div class="row">
-            <span class="material-symbols-outlined secondary">bolt</span>
-            <span class="secondary">Flink Proc</span>
-          </div>
-          <small>1.2k events/s</small>
-        </button>
+          <button
+            class="node chip-node tall"
+            style="left: 60%; top: 22%"
+            [class.selected]="selectedId === 'flink'"
+            [class.quarantined]="isQuarantined('flink')"
+            (click)="select('flink')"
+          >
+            <div class="row">
+              <span class="material-symbols-outlined secondary">bolt</span>
+              <span class="secondary">Flink Proc</span>
+            </div>
+            <small>1.2k events/s</small>
+          </button>
+        }
 
         <!-- LAYER 4: CONSUMERS / STORAGE -->
-        <button
-          class="node store-node circle"
-          style="left: 80%; top: 22%"
-          [class.selected]="selectedId === 'op-db'"
-          (click)="select('op-db')"
-        >
-          <span class="material-symbols-outlined">database</span>
-          <small>Op_DB</small>
-        </button>
+        @if (showCat('storage')) {
+          <button
+            class="node store-node circle"
+            style="left: 80%; top: 22%"
+            [class.selected]="selectedId === 'op-db'"
+            [class.quarantined]="isQuarantined('op-db')"
+            (click)="select('op-db')"
+          >
+            <span class="material-symbols-outlined">database</span>
+            <small>Op_DB</small>
+          </button>
 
-        <button
-          class="node store-node"
-          style="left: 82%; top: 52%"
-          [class.selected]="selectedId === 'ai-sum'"
-          (click)="select('ai-sum')"
-        >
-          <span class="material-symbols-outlined secondary">memory</span>
-          <small>AI_SUM</small>
-        </button>
+          <button
+            class="node store-node"
+            style="left: 82%; top: 52%"
+            [class.selected]="selectedId === 'ai-sum'"
+            [class.quarantined]="isQuarantined('ai-sum')"
+            (click)="select('ai-sum')"
+          >
+            <span class="material-symbols-outlined secondary">memory</span>
+            <small>AI_SUM</small>
+          </button>
+        }
 
         <!-- Layer labels -->
         <div class="layer-labels">
@@ -216,10 +242,14 @@
           </div>
 
           <div class="detail-actions">
-            <button class="danger">Quarantine Node</button>
+            <button class="danger" (click)="quarantine()" [disabled]="isQuarantined(selectedId)">
+              {{ isQuarantined(selectedId) ? 'Quarantined' : 'Quarantine Node' }}
+            </button>
             <div class="split">
-              <button>Path View</button>
-              <button>Forensics</button>
+              <button [class.on]="showIncidentPath" (click)="toggleIncidentPath()">
+                Path View
+              </button>
+              <button (click)="openForensics()">Forensics</button>
             </div>
           </div>
         </div>

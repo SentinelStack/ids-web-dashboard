@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Router } from '@angular/router';
 
 import { HateoasService } from '../../core/services/hateoas.service';
 
@@ -17,6 +18,7 @@ interface Detection {
 interface NodeDetail {
   name: string;
   id: string;
+  category: Category;
   status: string;
   statusTone: 'ok' | 'warn' | 'error';
   load: string;
@@ -59,6 +61,7 @@ interface RuntimeLogDto {
 }
 
 type FeedMode = 'events' | 'logs';
+type Category = 'edge' | 'backend' | 'kafka' | 'storage';
 
 @Component({
   selector: 'app-topology-page',
@@ -68,11 +71,17 @@ type FeedMode = 'events' | 'logs';
 export class TopologyPageComponent implements OnInit, OnDestroy {
   private static readonly REFRESH_MS = 6000;
   private readonly hateoas = inject(HateoasService);
+  private readonly router = inject(Router);
   private feedTimer?: ReturnType<typeof setInterval>;
 
   loaded = false;
   feedMode: FeedMode = 'events';
   feedError = false;
+  refreshing = false;
+
+  /** Toolbar/inspector toggles. */
+  showIncidentPath = true;
+  private readonly quarantined = new Set<string>();
 
   readonly kpis: Kpi[] = [
     { label: 'Active Edge Agents', value: '12', unit: '11H / 1D', tone: 'primary' },
@@ -99,6 +108,7 @@ export class TopologyPageComponent implements OnInit, OnDestroy {
     'edge-router': {
       name: 'OpenWrt Edge Gateway',
       id: 'EDGE-ROUTER-01',
+      category: 'edge',
       status: 'Degraded',
       statusTone: 'error',
       load: '68% CPU / 72% RAM',
@@ -115,6 +125,7 @@ export class TopologyPageComponent implements OnInit, OnDestroy {
     ingestion: {
       name: 'Ingestion Service',
       id: 'SVC-INGEST-01',
+      category: 'backend',
       status: 'Healthy',
       statusTone: 'ok',
       load: '41% CPU / 55% RAM',
@@ -127,6 +138,7 @@ export class TopologyPageComponent implements OnInit, OnDestroy {
     kafka: {
       name: 'Kafka Broker',
       id: 'MSG-KAFKA-01',
+      category: 'kafka',
       status: 'Degraded',
       statusTone: 'warn',
       load: '63% CPU / 70% RAM',
@@ -139,6 +151,7 @@ export class TopologyPageComponent implements OnInit, OnDestroy {
     flink: {
       name: 'Flink Processor',
       id: 'PROC-FLINK-01',
+      category: 'kafka',
       status: 'Healthy',
       statusTone: 'ok',
       load: '58% CPU / 61% RAM',
@@ -151,6 +164,7 @@ export class TopologyPageComponent implements OnInit, OnDestroy {
     'op-db': {
       name: 'Operational Store',
       id: 'STORE-OP-DB',
+      category: 'storage',
       status: 'Healthy',
       statusTone: 'ok',
       load: '37% CPU / 64% RAM',
@@ -163,6 +177,7 @@ export class TopologyPageComponent implements OnInit, OnDestroy {
     'ai-sum': {
       name: 'AI Summarizer',
       id: 'CONS-AI-SUM',
+      category: 'storage',
       status: 'Healthy',
       statusTone: 'ok',
       load: '49% CPU / 58% RAM',
@@ -195,6 +210,90 @@ export class TopologyPageComponent implements OnInit, OnDestroy {
       this.selectedId = id;
       this.selected = node;
     }
+  }
+
+  // ── Filter chips (All / Edge / Backend / Kafka / Storage) ───────────────
+  setFilter(label: string): void {
+    this.activeFilter = label;
+  }
+
+  /** Is a given canvas node category visible under the active filter? */
+  showCat(cat: Category): boolean {
+    return this.activeFilter === 'All Nodes' || this.activeFilter.toLowerCase() === cat;
+  }
+
+  // ── Toolbar: Refresh / Export / View Path ───────────────────────────────
+  async refresh(): Promise<void> {
+    this.refreshing = true;
+    await this.loadFeed();
+    // Restart the poll cycle so the next auto-refresh is a full interval away.
+    if (this.feedTimer) {
+      clearInterval(this.feedTimer);
+    }
+    this.feedTimer = setInterval(() => void this.loadFeed(), TopologyPageComponent.REFRESH_MS);
+    this.refreshing = false;
+  }
+
+  /** Toggle the highlighted incident (DDoS) path overlay on the canvas. */
+  toggleIncidentPath(): void {
+    this.showIncidentPath = !this.showIncidentPath;
+  }
+
+  /** Download the current topology + feed as a JSON snapshot. */
+  exportSnapshot(): void {
+    const snapshot = {
+      exportedAt: new Date().toISOString(),
+      filter: this.activeFilter,
+      kpis: this.kpis,
+      nodes: Object.values(this.nodes).map((n) => ({
+        ...n,
+        quarantined: this.quarantined.has(this.idForNode(n)),
+      })),
+      dependencies: this.dependencies,
+      feedMode: this.feedMode,
+      feed: this.feed,
+    };
+    const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `topology-snapshot-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ── Inspector: Quarantine / Path View / Forensics ───────────────────────
+  isQuarantined(id: string): boolean {
+    return this.quarantined.has(id);
+  }
+
+  /** Contain the selected node: mark it quarantined and log it to the feed. */
+  quarantine(): void {
+    if (this.isQuarantined(this.selectedId)) {
+      return;
+    }
+    this.quarantined.add(this.selectedId);
+    this.selected.status = 'Quarantined';
+    this.selected.statusTone = 'warn';
+    this.selected.risk = 'Contained';
+    this.selected.riskTone = 'ok';
+    this.selected.detections = [];
+    const event: FeedEvent = {
+      time: new Date().toLocaleTimeString('en-GB', { hour12: false }),
+      kind: 'CONTAINMENT',
+      message: `${this.selected.name} (${this.selected.id}) quarantined by operator`,
+      tone: 'primary',
+    };
+    this.feed = [event, ...this.feed].slice(0, 50);
+  }
+
+  /** Jump to the incidents/forensics console for the flagged traffic. */
+  openForensics(): void {
+    void this.router.navigate(['/app/incidents']);
+  }
+
+  private idForNode(n: NodeDetail): string {
+    return Object.keys(this.nodes).find((k) => this.nodes[k] === n) ?? n.id;
   }
 
   setMode(mode: FeedMode): void {

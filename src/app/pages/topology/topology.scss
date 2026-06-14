@@ -171,7 +171,26 @@ $muted-2: #90a2bb;
       &:hover {
         color: $cyan;
       }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+
+      &.on {
+        color: $cyan;
+      }
+
+      .spin {
+        animation: spin 0.8s linear infinite;
+      }
     }
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -273,6 +292,12 @@ $muted-2: #90a2bb;
 /* Selected ring */
 .node.selected {
   filter: drop-shadow(0 0 10px rgb(41 216 255 / 55%));
+}
+
+/* Quarantined node — dimmed + amber outline */
+.node.quarantined {
+  opacity: 0.65;
+  filter: grayscale(0.3) drop-shadow(0 0 8px rgb(255 206 107 / 45%));
 }
 
 /* Icon-only nodes (WAN / LAN) */
@@ -708,6 +733,13 @@ $muted-2: #90a2bb;
     &:hover {
       filter: brightness(1.1);
     }
+
+    &:disabled {
+      background: rgb(255 206 107 / 18%);
+      color: $amber;
+      cursor: default;
+      filter: none;
+    }
   }
 
   .split {
@@ -727,6 +759,12 @@ $muted-2: #90a2bb;
       text-transform: uppercase;
       cursor: pointer;
       transition: background 0.2s ease;
+
+      &.on {
+        border-color: rgb(41 216 255 / 40%);
+        background: rgb(41 216 255 / 10%);
+        color: $cyan;
+      }
 
       &:hover {
         background: rgb(255 255 255 / 5%);
