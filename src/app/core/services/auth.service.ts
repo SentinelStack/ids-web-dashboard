@@ -73,10 +73,13 @@ export class AuthService {
     localStorage.setItem(AuthService.ACCOUNT_KEY, JSON.stringify(data.account));
   }
 
-  async register(username: string, password: string, email: string, fullName: string): Promise<void> {
-    await firstValueFrom(
-      this.api.post('/auth/register', { username, password, email, fullName }),
-    );
+  async register(
+    username: string,
+    password: string,
+    email: string,
+    fullName: string,
+  ): Promise<void> {
+    await firstValueFrom(this.api.post('/auth/register', { username, password, email, fullName }));
   }
 
   async logout(): Promise<void> {

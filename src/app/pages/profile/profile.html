@@ -191,7 +191,9 @@
           @if (activeSessions > 1) {
             <button (click)="signOutOthers()" [disabled]="busy">Review Sessions</button>
           }
-          <button class="purple-btn" (click)="changePassword()" [disabled]="busy">Update Password</button>
+          <button class="purple-btn" (click)="changePassword()" [disabled]="busy">
+            Update Password
+          </button>
         </div>
       </section>
 

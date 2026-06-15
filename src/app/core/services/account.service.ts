@@ -52,7 +52,9 @@ export class AccountService {
   }
 
   async updateProfile(body: ProfileUpdate): Promise<AccountView> {
-    const res = await firstValueFrom(this.api.put<ProfileUpdate, AccountView>('/account/profile', body));
+    const res = await firstValueFrom(
+      this.api.put<ProfileUpdate, AccountView>('/account/profile', body),
+    );
     return res!.data as AccountView;
   }
 
@@ -65,21 +67,24 @@ export class AccountService {
 
   async updateNotifications(notifications: Record<string, boolean>): Promise<AccountView> {
     const res = await firstValueFrom(
-      this.api.put<{ notifications: Record<string, boolean> }, AccountView>('/account/notifications', {
-        notifications,
-      }),
+      this.api.put<{ notifications: Record<string, boolean> }, AccountView>(
+        '/account/notifications',
+        {
+          notifications,
+        },
+      ),
     );
     return res!.data as AccountView;
   }
 
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {
-    await firstValueFrom(
-      this.api.post('/account/password', { currentPassword, newPassword }),
-    );
+    await firstValueFrom(this.api.post('/account/password', { currentPassword, newPassword }));
   }
 
   async setMfa(enabled: boolean): Promise<AccountView> {
-    const res = await firstValueFrom(this.api.post<{ enabled: boolean }, AccountView>('/account/mfa', { enabled }));
+    const res = await firstValueFrom(
+      this.api.post<{ enabled: boolean }, AccountView>('/account/mfa', { enabled }),
+    );
     return res!.data as AccountView;
   }
 

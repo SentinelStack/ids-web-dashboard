@@ -48,7 +48,12 @@ export class LoginPageComponent {
     this.error = '';
     this.busy = true;
     try {
-      await this.auth.register(this.regUsername.trim(), this.regPassword, this.regEmail.trim(), this.regUsername.trim());
+      await this.auth.register(
+        this.regUsername.trim(),
+        this.regPassword,
+        this.regEmail.trim(),
+        this.regUsername.trim(),
+      );
       await this.auth.login(this.regUsername.trim(), this.regPassword);
       void this.router.navigate(['/app/dashboard']);
     } catch (e) {
