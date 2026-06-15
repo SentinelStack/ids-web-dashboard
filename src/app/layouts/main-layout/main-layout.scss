@@ -337,7 +337,7 @@
 }
 
 .sidenav {
-  width: 270px;
+  width: 296px;
   border-right: 1px solid rgb(134 162 189 / 16%);
   background: rgb(5 10 24 / 78%);
   display: flex;
@@ -377,7 +377,7 @@
     margin: 0;
     color: #c5d2e6;
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     letter-spacing: 0.06em;
   }
@@ -386,36 +386,36 @@
     margin: 3px 0 0;
     color: var(--cyan);
     font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
+    font-size: 12px;
   }
 }
 
 .menu-label {
   margin: 0;
-  padding: 16px 22px 6px;
+  padding: 20px 24px 8px;
   color: #5e708a;
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
 .menu {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 0 12px;
+  gap: 6px;
+  padding: 0 14px;
 
   a {
     display: flex;
     align-items: center;
-    gap: 13px;
-    padding: 12px 14px;
-    border-radius: 11px;
+    gap: 15px;
+    padding: 14px 16px;
+    border-radius: 12px;
     color: #9aabc4;
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 14.5px;
+    font-size: 16px;
     font-weight: 500;
     letter-spacing: 0.01em;
     text-decoration: none;
@@ -425,7 +425,7 @@
       background 0.15s ease;
 
     .material-symbols-outlined {
-      font-size: 22px;
+      font-size: 24px;
       color: #6f829d;
       transition: color 0.15s ease;
     }
@@ -441,18 +441,18 @@
     &.active {
       color: #ffffff;
       background: linear-gradient(90deg, rgb(41 216 255 / 18%), rgb(41 216 255 / 5%));
-      box-shadow: inset 2px 0 0 var(--cyan);
+      box-shadow: inset 3px 0 0 var(--cyan);
       .material-symbols-outlined {
         color: var(--cyan);
       }
     }
   }
+}
 
-  &.secondary {
-    margin-top: auto;
-    padding-top: 8px;
-    padding-bottom: 16px;
-  }
+/* Pin the System group (label + Log Viewer / Support) to the bottom together. */
+.menu-foot {
+  margin-top: auto;
+  padding-bottom: 18px;
 }
 
 .main-content {

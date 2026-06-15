@@ -141,23 +141,25 @@
         </a>
       </nav>
 
-      <p class="menu-label">System</p>
-      <nav class="menu secondary">
-        <a
-          routerLink="/app/logs"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: true }"
-        >
-          <span class="material-symbols-outlined">terminal</span>Log Viewer
-        </a>
-        <a
-          routerLink="/app/support"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: true }"
-        >
-          <span class="material-symbols-outlined">help_outline</span>Support
-        </a>
-      </nav>
+      <div class="menu-foot">
+        <p class="menu-label">System</p>
+        <nav class="menu secondary">
+          <a
+            routerLink="/app/logs"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }"
+          >
+            <span class="material-symbols-outlined">terminal</span>Log Viewer
+          </a>
+          <a
+            routerLink="/app/support"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }"
+          >
+            <span class="material-symbols-outlined">help_outline</span>Support
+          </a>
+        </nav>
+      </div>
     </aside>
 
     <main class="main-content">
