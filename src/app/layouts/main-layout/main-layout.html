@@ -107,7 +107,13 @@
         >
           <span class="material-symbols-outlined">terminal</span>Log Viewer
         </a>
-        <a><span class="material-symbols-outlined">help_outline</span>Support</a>
+        <a
+          routerLink="/app/support"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          <span class="material-symbols-outlined">help_outline</span>Support
+        </a>
       </nav>
     </aside>
 

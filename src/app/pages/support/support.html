@@ -1,0 +1,211 @@
+<div class="support-page fade-in">
+  <div class="page-head">
+    <h1>Support &amp; Governance Center</h1>
+    <p>Operational guidance, documentation and escalation references for the AEGIS IDS platform.</p>
+  </div>
+
+  <!-- KPI ROW -->
+  <div class="kpi-row">
+    <div class="card kpi">
+      <p class="kpi-label"><span class="material-symbols-outlined">description</span> Doc Status</p>
+      <div class="kpi-value">
+        <span class="dot tone-primary"></span><span class="mono">Available</span>
+      </div>
+    </div>
+    <div class="card kpi">
+      <p class="kpi-label"><span class="material-symbols-outlined">menu_book</span> Runbook Ver</p>
+      <div class="kpi-value">
+        <span class="value">{{ runbookVersion }}</span>
+      </div>
+    </div>
+    <div class="card kpi">
+      <p class="kpi-label"><span class="material-symbols-outlined">warning</span> Escalation</p>
+      <div class="kpi-value">
+        <span class="mono">{{ escalationLevels }} Levels</span>
+      </div>
+    </div>
+    <div class="card kpi">
+      <p class="kpi-label"><span class="material-symbols-outlined">update</span> Policy Review</p>
+      <div class="kpi-value">
+        <span class="dot tone-secondary"></span><span class="mono purple">{{ policyReview }}</span>
+      </div>
+    </div>
+    <div class="card kpi">
+      <p class="kpi-label">
+        <span class="material-symbols-outlined">verified</span> Platform Readiness
+      </p>
+      <div class="kpi-value">
+        <span class="value">{{ readiness }}%</span>
+        <div class="bar"><i [style.width.%]="readiness"></i></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="grid">
+    <!-- LEFT -->
+    <div class="left">
+      <!-- Platform Mechanics -->
+      <section class="card panel accent">
+        <div class="panel-head">
+          <span class="material-symbols-outlined">memory</span>
+          <h3>Platform Mechanics</h3>
+        </div>
+        <div class="mechanics">
+          @for (m of mechanics; track m.title) {
+            <div class="mech">
+              <span class="material-symbols-outlined">{{ m.icon }}</span>
+              <div>
+                <h4>{{ m.title }}</h4>
+                <p>{{ m.desc }}</p>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- Documentation Center -->
+      <section class="card panel">
+        <div class="panel-head between">
+          <div class="ph-left">
+            <span class="material-symbols-outlined">library_books</span>
+            <h3>Documentation Center</h3>
+          </div>
+          <a class="browse" routerLink="/app/topology"
+            >Browse all <span class="material-symbols-outlined">arrow_forward</span></a
+          >
+        </div>
+        <div class="docs">
+          @for (d of docs; track d.title) {
+            <div class="doc">
+              <div class="doc-top">
+                <span class="material-symbols-outlined">{{ d.icon }}</span>
+                <span class="kind mono">{{ d.kind }}</span>
+              </div>
+              <h4>{{ d.title }}</h4>
+              <p>{{ d.desc }}</p>
+              <a class="view" [routerLink]="d.route">
+                <span class="material-symbols-outlined">visibility</span> View
+              </a>
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- Policies & References -->
+      <section class="card panel">
+        <div class="panel-head">
+          <span class="material-symbols-outlined">policy</span>
+          <h3>Policies &amp; References</h3>
+        </div>
+        <div class="policies">
+          @for (p of policies; track p.id) {
+            <div class="policy">
+              <div class="p-id">
+                <span class="material-symbols-outlined">description</span>
+                <span class="mono">{{ p.id }}</span>
+              </div>
+              <span class="status" [class.draft]="p.status === 'DRAFT'">
+                <i></i>{{ p.status === 'DRAFT' ? 'Draft' : 'Active' }}
+              </span>
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- Responsibility Matrix -->
+      <section class="card panel">
+        <div class="panel-head">
+          <span class="material-symbols-outlined">table_chart</span>
+          <h3>Responsibility Matrix</h3>
+        </div>
+        <div class="matrix">
+          <table>
+            <thead>
+              <tr>
+                <th>Area</th>
+                <th>Responsible Role</th>
+                <th>Scope</th>
+                <th>Review</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of matrix; track r.area) {
+                <tr>
+                  <td class="area">{{ r.area }}</td>
+                  <td class="dim">{{ r.role }}</td>
+                  <td class="dim scope">{{ r.scope }}</td>
+                  <td class="mono freq-{{ r.freqTone }}">{{ r.freq }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right">
+      <!-- Escalation Protocol -->
+      <section class="card panel danger">
+        <div class="panel-head">
+          <span class="material-symbols-outlined err">crisis_alert</span>
+          <h3>Escalation Protocol</h3>
+        </div>
+        <div class="timeline">
+          @for (s of escalation; track s.n) {
+            <div class="step">
+              <span class="node tone-{{ s.tone }}">{{ s.n }}</span>
+              <h4>{{ s.title }}</h4>
+              <ul>
+                @for (it of s.items; track it) {
+                  <li>{{ it }}</li>
+                }
+              </ul>
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- Key Contacts -->
+      <section class="card panel">
+        <div class="panel-head">
+          <span class="material-symbols-outlined">group</span>
+          <h3>Key Contacts</h3>
+        </div>
+        <div class="contacts">
+          @for (c of contacts; track c.email) {
+            <div class="contact">
+              <div class="c-left">
+                <span class="avatar tone-{{ c.tone }}">{{ c.initials }}</span>
+                <span>{{ c.role }}</span>
+              </div>
+              <a class="mono tone-text-{{ c.tone }}" [href]="'mailto:' + c.email">{{ c.email }}</a>
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- Readiness Checklist -->
+      <section class="card panel">
+        <div class="panel-head between">
+          <div class="ph-left">
+            <span class="material-symbols-outlined">checklist</span>
+            <h3>Readiness Checklist</h3>
+          </div>
+          <span class="mono dim">{{ readiness }}%</span>
+        </div>
+        <div class="checklist">
+          @for (c of checklist; track c.key) {
+            <button class="check" [class.done]="c.done" (click)="toggle(c)">
+              <span class="box"
+                ><span class="material-symbols-outlined">{{ c.done ? 'check' : '' }}</span></span
+              >
+              <span class="label">{{ c.label }}</span>
+            </button>
+          }
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
