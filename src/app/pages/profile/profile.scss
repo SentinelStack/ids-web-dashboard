@@ -923,45 +923,47 @@ $ink: #e9f1fb;
     color: $red;
     font-size: 12.5px;
   }
+}
 
-  .form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 4px;
-    button {
-      padding: 10px 18px;
-      border-radius: 9px;
-      font-family: 'Space Grotesk', sans-serif;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.02em;
-      cursor: pointer;
-      transition:
-        background 0.18s ease,
-        border-color 0.18s ease,
-        transform 0.15s ease;
-      &:disabled {
-        opacity: 0.55;
-        cursor: not-allowed;
+/* Action rows — shared by .edit-form and standalone modal sections (e.g. the
+   2FA gate note), so the buttons are styled wherever they appear. */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+  button {
+    padding: 10px 18px;
+    border-radius: 9px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition:
+      background 0.18s ease,
+      border-color 0.18s ease,
+      transform 0.15s ease;
+    &:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    &.ghost {
+      border: 1px solid rgb(164 230 255 / 20%);
+      background: transparent;
+      color: $muted-2;
+      &:hover:not(:disabled) {
+        background: rgb(255 255 255 / 6%);
+        color: $ink;
       }
-      &.ghost {
-        border: 1px solid rgb(164 230 255 / 20%);
-        background: transparent;
-        color: $muted-2;
-        &:hover:not(:disabled) {
-          background: rgb(255 255 255 / 6%);
-          color: $ink;
-        }
-      }
-      &.save {
-        border: 1px solid rgb(41 216 255 / 45%);
-        background: linear-gradient(180deg, rgb(41 216 255 / 22%), rgb(41 216 255 / 10%));
-        color: $cyan;
-        box-shadow: 0 0 18px -6px rgb(41 216 255 / 55%);
-        &:hover:not(:disabled) {
-          transform: translateY(-1px);
-        }
+    }
+    &.save {
+      border: 1px solid rgb(41 216 255 / 45%);
+      background: linear-gradient(180deg, rgb(41 216 255 / 22%), rgb(41 216 255 / 10%));
+      color: $cyan;
+      box-shadow: 0 0 18px -6px rgb(41 216 255 / 55%);
+      &:hover:not(:disabled) {
+        transform: translateY(-1px);
       }
     }
   }
