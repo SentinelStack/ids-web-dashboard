@@ -2,9 +2,23 @@ import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
-import { HalResource, linkHref } from '../../core/models/hateoas';
+import { HalResource, expand, linkHref } from '../../core/models/hateoas';
 import { ApiService } from '../../core/services/api.service';
 import { HateoasService } from '../../core/services/hateoas.service';
+
+/** GET /api/console/topology/node/{deviceId} — live node detail. */
+interface NodeDetailDto {
+  deviceId: string;
+  name: string;
+  ip: string;
+  status: string;
+  statusTone: 'ok' | 'warn' | 'error';
+  load: string;
+  risk: string;
+  riskTone: 'ok' | 'warn' | 'error';
+  activity: string;
+  detections: { label: string; level: 'critical' | 'warning' }[];
+}
 
 interface Kpi {
   label: string;
@@ -202,7 +216,8 @@ export class TopologyPageComponent implements OnInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     this.loaded = true;
     await this.loadFeed();
-    this.feedTimer = setInterval(() => void this.loadFeed(), TopologyPageComponent.REFRESH_MS);
+    await this.loadNodeDetail(this.selected.deviceId);
+    this.feedTimer = setInterval(() => void this.tick(), TopologyPageComponent.REFRESH_MS);
   }
 
   ngOnDestroy(): void {
@@ -211,11 +226,46 @@ export class TopologyPageComponent implements OnInit, OnDestroy {
     }
   }
 
+  private async tick(): Promise<void> {
+    await this.loadFeed();
+    // Keep the inspector live for device-backed nodes.
+    await this.loadNodeDetail(this.selected.deviceId);
+  }
+
   select(id: string): void {
     const node = this.nodes[id];
     if (node) {
       this.selectedId = id;
       this.selected = node;
+      void this.loadNodeDetail(node.deviceId);
+    }
+  }
+
+  /** Replace a device-backed node's inspector fields with live backend data. */
+  private async loadNodeDetail(deviceId?: string): Promise<void> {
+    if (!deviceId) {
+      return;
+    }
+    try {
+      const tmpl = await this.hateoas.hrefOf('topology-node');
+      if (!tmpl) {
+        return;
+      }
+      const res = await this.hateoas.followHref<NodeDetailDto>(expand(tmpl, { deviceId }));
+      const d = res?.data;
+      // Only apply if the user hasn't navigated to a different node meanwhile.
+      if (d && this.selected.deviceId === deviceId) {
+        this.selected.status = d.status;
+        this.selected.statusTone = d.statusTone;
+        this.selected.load = d.load;
+        this.selected.risk = d.risk;
+        this.selected.riskTone = d.riskTone;
+        this.selected.ip = d.ip;
+        this.selected.activity = d.activity;
+        this.selected.detections = d.detections;
+      }
+    } catch {
+      /* keep the representative values on failure */
     }
   }
 
@@ -232,12 +282,12 @@ export class TopologyPageComponent implements OnInit, OnDestroy {
   // ── Toolbar: Refresh / Export / View Path ───────────────────────────────
   async refresh(): Promise<void> {
     this.refreshing = true;
-    await this.loadFeed();
+    await this.tick();
     // Restart the poll cycle so the next auto-refresh is a full interval away.
     if (this.feedTimer) {
       clearInterval(this.feedTimer);
     }
-    this.feedTimer = setInterval(() => void this.loadFeed(), TopologyPageComponent.REFRESH_MS);
+    this.feedTimer = setInterval(() => void this.tick(), TopologyPageComponent.REFRESH_MS);
     this.refreshing = false;
   }
 
