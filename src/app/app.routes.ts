@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 import { MainLayoutComponent } from './layouts/main-layout/main-layout';
 import { DashboardPageComponent } from './pages/dashboard/dashboard';
 import { IncidentsPageComponent } from './pages/incidents/incidents';
+import { LogViewerPageComponent } from './pages/log-viewer/log-viewer';
 import { LoginPageComponent } from './pages/login/login';
 import { ReportsPageComponent } from './pages/reports/reports';
 import { RulesPageComponent } from './pages/rules/rules';
@@ -23,6 +24,7 @@ export const routes: Routes = [
       { path: 'reports', component: ReportsPageComponent },
       { path: 'topology', component: TopologyPageComponent },
       { path: 'rules', component: RulesPageComponent },
+      { path: 'logs', component: LogViewerPageComponent },
     ],
   },
   { path: '**', redirectTo: 'login' },

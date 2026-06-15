@@ -1,0 +1,197 @@
+@if (loaded) {
+  <div class="logs-page fade-in">
+    <div class="page-head">
+      <h1>System &amp; Edge Log Viewer</h1>
+      <p>Unified, real-time log and event stream aggregated across every component.</p>
+    </div>
+
+    <!-- KPI ROW -->
+    <div class="kpi-row">
+      <div class="card kpi">
+        <p class="kpi-label">Logs Ingested (24h)</p>
+        <div class="kpi-value">
+          <span class="value">{{ kpis.logsIngested24h }}</span>
+        </div>
+      </div>
+      <div class="card kpi">
+        <p class="kpi-label">Edge Logs</p>
+        <div class="kpi-value">
+          <span class="value">{{ kpis.edgeLogs }}</span
+          ><span class="unit">edge</span>
+        </div>
+      </div>
+      <div class="card kpi error">
+        <p class="kpi-label">Critical Events</p>
+        <div class="kpi-value">
+          <span class="value">{{ kpis.criticalEvents }}</span
+          ><span class="unit">action req.</span>
+        </div>
+      </div>
+      <div class="card kpi warn">
+        <p class="kpi-label">Warning Events</p>
+        <div class="kpi-value">
+          <span class="value">{{ kpis.warningEvents }}</span
+          ><span class="unit">anomaly</span>
+        </div>
+      </div>
+      <div class="card kpi primary">
+        <p class="kpi-label">Ingestion Delay</p>
+        <div class="kpi-value">
+          <span class="value">{{ kpis.ingestionDelayMs }}</span
+          ><span class="unit">ms</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="card filter-bar">
+      <div class="search-wrap">
+        <span class="material-symbols-outlined">search</span>
+        <input
+          type="text"
+          placeholder="Search logs, device, event, trace ID…"
+          [(ngModel)]="search"
+        />
+      </div>
+      <select [(ngModel)]="severityFilter">
+        @for (s of severities; track s) {
+          <option [value]="s">{{ s === 'ALL' ? 'Severity (All)' : s }}</option>
+        }
+      </select>
+      <button class="tail" [class.on]="liveTail" (click)="toggleLiveTail()">
+        <span class="dot"></span>{{ liveTail ? 'Live Tail ON' : 'Live Tail OFF' }}
+      </button>
+    </div>
+
+    <!-- STREAM + DETAIL -->
+    <div class="stage">
+      <section class="card stream">
+        <div class="stream-head">
+          <span class="k">Live Ingest Stream</span>
+          <span class="mono dim">{{ visibleRows.length }} entries</span>
+        </div>
+        <div class="stream-body">
+          <table>
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Severity</th>
+                <th>Source</th>
+                <th>Device</th>
+                <th>Event Type</th>
+                <th>Message</th>
+                <th>Trace</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of visibleRows; track $index) {
+                <tr [class.sel]="selected === r" (click)="select(r)">
+                  <td class="mono dim nowrap">{{ r.time }}</td>
+                  <td>
+                    <span class="sev tone-{{ sevTone(r.severity) }}">{{ r.severity }}</span>
+                  </td>
+                  <td class="src">
+                    <span class="material-symbols-outlined">{{ r.icon }}</span
+                    >{{ r.source }}
+                  </td>
+                  <td class="mono dim">{{ r.device }}</td>
+                  <td class="mono evt tone-text-{{ r.tone }}">{{ r.eventType }}</td>
+                  <td class="msg dim">{{ r.message }}</td>
+                  <td class="mono trace">{{ r.traceId }}</td>
+                </tr>
+              }
+              @if (visibleRows.length === 0) {
+                <tr>
+                  <td colspan="7" class="empty mono">No logs match this filter.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- DETAIL INSPECTION -->
+      <aside class="card detail" [class.empty-detail]="!selected">
+        @if (selected; as s) {
+          <div class="detail-head">
+            <span class="k">Detailed Inspection</span>
+            <button class="x" (click)="closeDetail()">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+          <div class="detail-body">
+            <h3 class="evt-title tone-text-{{ s.tone }}">{{ s.eventType }}</h3>
+            <p class="sub dim">{{ s.message }}</p>
+
+            <div class="kv">
+              <p class="k">Severity</p>
+              <span class="sev tone-{{ sevTone(s.severity) }}">{{ s.severity }}</span>
+            </div>
+            <div class="kv">
+              <p class="k">Source Component</p>
+              <span class="mono">{{ s.source }}</span>
+            </div>
+            <div class="kv">
+              <p class="k">Device</p>
+              <span class="mono">{{ s.device }}</span>
+            </div>
+            <div class="kv">
+              <p class="k">Timestamp</p>
+              <span class="mono">{{ s.time }}</span>
+            </div>
+            <div class="kv">
+              <p class="k">Trace ID</p>
+              <span class="mono trace">{{ s.traceId }}</span>
+            </div>
+
+            <button class="copy" (click)="copyTrace()">
+              <span class="material-symbols-outlined">content_copy</span> Copy Trace ID
+            </button>
+          </div>
+        } @else {
+          <div class="detail-placeholder">
+            <span class="material-symbols-outlined">arrow_back</span>
+            <p>Select a log entry to inspect it.</p>
+          </div>
+        }
+      </aside>
+    </div>
+
+    <!-- BOTTOM: trace flow + pipeline integrity -->
+    <div class="bottom">
+      <div class="card flow">
+        <div class="flow-head">
+          <span class="k">Trace Propagation Flow</span>
+          @if (selected) {
+            <span class="mono dim">{{ selected.traceId }}</span>
+          }
+        </div>
+        <div class="flow-body">
+          @for (st of traceStages; track $index; let last = $last) {
+            <div class="stage-node">
+              <div class="glyph tone-{{ st.tone }}">
+                <span class="material-symbols-outlined">{{ st.icon }}</span>
+              </div>
+              <span class="stage-label">{{ st.label }}</span>
+            </div>
+            @if (!last) {
+              <span class="material-symbols-outlined arrow">trending_flat</span>
+            }
+          }
+        </div>
+      </div>
+
+      <div class="card integrity">
+        <span class="k">Pipeline Integrity</span>
+        <div class="int-list">
+          @for (c of pipeline; track c.name) {
+            <div class="int-row">
+              <span class="mono dim">{{ c.name }}</span>
+              <span class="badge tone-{{ statusTone(c.status) }}">{{ c.status }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+}

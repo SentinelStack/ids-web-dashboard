@@ -100,7 +100,13 @@
       </nav>
 
       <nav class="menu secondary">
-        <a><span class="material-symbols-outlined">terminal</span>Log Viewer</a>
+        <a
+          routerLink="/app/logs"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          <span class="material-symbols-outlined">terminal</span>Log Viewer
+        </a>
         <a><span class="material-symbols-outlined">help_outline</span>Support</a>
       </nav>
     </aside>
