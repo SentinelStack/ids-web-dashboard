@@ -1,15 +1,16 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { ActivityService } from '../../core/services/activity.service';
+import { AccountView, AuthService } from '../../core/services/auth.service';
+import { AccountService, AuditView, SessionView } from '../../core/services/account.service';
 
-interface Notification {
+interface NotificationRow {
   key: string;
   label: string;
   on: boolean;
 }
 
-interface Session {
+interface SessionRow {
   device: string;
   meta: string;
   icon: string;
@@ -21,7 +22,17 @@ interface ActivityRow {
   time: string;
   label: string;
   device: string;
+  status: string;
 }
+
+const NOTIFICATION_LABELS: { key: string; label: string }[] = [
+  { key: 'critical', label: 'Critical Security Alerts' },
+  { key: 'incident', label: 'Incident Updates' },
+  { key: 'weekly', label: 'Weekly Summary' },
+  { key: 'email', label: 'Email Notifications' },
+  { key: 'push', label: 'Mobile Push Notifications' },
+  { key: 'maintenance', label: 'Maintenance Notices' },
+];
 
 @Component({
   selector: 'app-profile-page',
@@ -30,25 +41,23 @@ interface ActivityRow {
   styleUrl: './profile.scss',
 })
 export class ProfilePageComponent implements OnInit {
-  private static readonly PREFS_KEY = 'aegis-prefs';
-  private readonly activitySvc = inject(ActivityService);
+  private readonly accountSvc = inject(AccountService);
+  private readonly auth = inject(AuthService);
 
-  // Static operator identity (single-operator console — no user backend).
-  readonly user = {
-    name: 'George Lupu',
-    username: '@george.lupu',
-    email: 'george.lupu@aegis.local',
-    role: 'SOC Analyst',
-    phone: '+40 700 000 000',
-    language: 'English (UK)',
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Bucharest',
-    accountId: 'USR-0142',
+  user = {
+    name: '',
+    username: '',
+    email: '',
+    role: '',
+    phone: '',
+    language: '',
+    timezone: '',
+    accountId: '',
   };
 
-  // Static security reference (no MFA/session backend in this console).
-  readonly security = {
-    mfa: 'Enabled',
-    passwordChanged: '18 days ago',
+  security = {
+    mfa: 'Disabled',
+    passwordChanged: '—',
     loginAlerts: 'Enabled',
     trustedDevice: '',
     sessionTimeout: '30 minutes',
@@ -62,7 +71,6 @@ export class ProfilePageComponent implements OnInit {
     'Export metadata includes timestamp and source IP.',
   ];
 
-  // Persisted preferences (real, stored in localStorage).
   prefs = {
     theme: 'Dark',
     density: 'Compact',
@@ -71,41 +79,22 @@ export class ProfilePageComponent implements OnInit {
     autoRefresh: true,
   };
 
-  notifications: Notification[] = [
-    { key: 'critical', label: 'Critical Security Alerts', on: true },
-    { key: 'incident', label: 'Incident Updates', on: true },
-    { key: 'weekly', label: 'Weekly Summary', on: true },
-    { key: 'email', label: 'Email Notifications', on: true },
-    { key: 'push', label: 'Mobile Push Notifications', on: false },
-    { key: 'maint', label: 'Maintenance Notices', on: true },
-  ];
-
-  sessions: Session[] = [];
+  notifications: NotificationRow[] = [];
+  sessions: SessionRow[] = [];
   activity: ActivityRow[] = [];
 
+  busy = false;
+
   ngOnInit(): void {
-    this.loadPrefs();
-    this.security.trustedDevice = this.activitySvc.device();
-    this.sessions = [
-      {
-        device: this.activitySvc.device(),
-        meta: `${this.user.timezone} · this browser`,
-        icon: this.activitySvc.device().includes('iPhone') ? 'smartphone' : 'laptop_mac',
-        current: true,
-        lastActive: 'now',
-      },
-      {
-        device: 'iPhone',
-        meta: `${this.user.timezone} · Mobile App`,
-        icon: 'smartphone',
-        current: false,
-        lastActive: '8 mins ago',
-      },
-    ];
-    this.refreshActivity();
+    // Paint instantly from the cached account, then refresh from the backend.
+    const cached = this.auth.account;
+    if (cached) {
+      this.applyAccount(cached);
+    }
+    void this.refresh();
   }
 
-  // ── Derived KPIs (real where possible) ──────────────────────────────────
+  // ── KPIs ─────────────────────────────────────────────────────────────────
   get activeSessions(): number {
     return this.sessions.length;
   }
@@ -115,31 +104,89 @@ export class ProfilePageComponent implements OnInit {
   }
 
   get lastLogin(): string {
-    const recs = this.activitySvc.recent();
-    if (!recs.length) {
-      return 'this session';
+    const login = this.activity.find((a) => /sign(ed)?[ -]?in|login/i.test(a.label));
+    return login ? login.time : 'this session';
+  }
+
+  // ── Mutations (all persisted to the backend) ──────────────────────────────
+  async toggleAutoRefresh(): Promise<void> {
+    if (this.busy) {
+      return;
     }
-    const oldest = new Date(recs[recs.length - 1].at).getTime();
-    const mins = Math.max(0, Math.round((Date.now() - oldest) / 60000));
-    return mins < 1 ? 'now' : `${mins}m ago`;
+    const next = !this.prefs.autoRefresh;
+    this.prefs.autoRefresh = next;
+    await this.guarded(() => this.accountSvc.updatePreferences({ autoRefresh: next }));
   }
 
-  // ── Interaction ─────────────────────────────────────────────────────────
-  toggleAutoRefresh(): void {
-    this.prefs.autoRefresh = !this.prefs.autoRefresh;
-    this.savePrefs();
-  }
-
-  toggleNotification(n: Notification): void {
+  async toggleNotification(n: NotificationRow): Promise<void> {
+    if (this.busy) {
+      return;
+    }
     n.on = !n.on;
-    this.savePrefs();
+    const map: Record<string, boolean> = {};
+    this.notifications.forEach((row) => (map[row.key] = row.on));
+    await this.guarded(() => this.accountSvc.updateNotifications(map));
   }
 
-  signOutOthers(): void {
-    this.sessions = this.sessions.filter((s) => s.current);
+  async editProfile(): Promise<void> {
+    const fullName = window.prompt('Full name', this.user.name)?.trim();
+    if (fullName == null) {
+      return;
+    }
+    const phone = window.prompt('Phone', this.user.phone)?.trim() ?? this.user.phone;
+    const email = window.prompt('Email', this.user.email)?.trim() ?? this.user.email;
+    await this.guarded(() => this.accountSvc.updateProfile({ fullName, phone, email }));
   }
 
-  /** Export the operator's account data (preferences + activity) as JSON. */
+  async changePassword(): Promise<void> {
+    const current = window.prompt('Current password');
+    if (!current) {
+      return;
+    }
+    const next = window.prompt('New password (min 8 chars)');
+    if (!next) {
+      return;
+    }
+    if (next.length < 8) {
+      window.alert('Password must be at least 8 characters.');
+      return;
+    }
+    if (this.busy) {
+      return;
+    }
+    this.busy = true;
+    try {
+      await this.accountSvc.changePassword(current, next);
+      await this.refresh();
+      window.alert('Password changed.');
+    } catch {
+      window.alert('Could not change password — check your current password.');
+    } finally {
+      this.busy = false;
+    }
+  }
+
+  async toggleMfa(): Promise<void> {
+    const enable = !/enabled/i.test(this.security.mfa);
+    await this.guarded(() => this.accountSvc.setMfa(enable));
+  }
+
+  async signOutOthers(): Promise<void> {
+    if (this.busy) {
+      return;
+    }
+    this.busy = true;
+    try {
+      await this.accountSvc.revokeOtherSessions();
+      this.sessions = await this.loadSessions();
+    } catch {
+      /* keep current */
+    } finally {
+      this.busy = false;
+    }
+  }
+
+  // ── Exports ────────────────────────────────────────────────────────────────
   downloadAccountData(): void {
     const blob = new Blob(
       [
@@ -147,9 +194,10 @@ export class ProfilePageComponent implements OnInit {
           {
             exportedAt: new Date().toISOString(),
             user: this.user,
+            security: this.security,
             preferences: this.prefs,
             notifications: this.notifications,
-            activity: this.activitySvc.recent(),
+            sessions: this.sessions,
           },
           null,
           2,
@@ -160,25 +208,97 @@ export class ProfilePageComponent implements OnInit {
     this.download(blob, `account-data-${Date.now()}.json`);
   }
 
-  /** Export the full activity history as CSV. */
   downloadHistory(): void {
     const rows = [
-      ['time', 'activity', 'device'],
-      ...this.activitySvc.recent().map((r) => [r.at, r.label, r.device]),
+      ['time', 'activity', 'device', 'status'],
+      ...this.activity.map((r) => [r.time, r.label, r.device, r.status]),
     ];
     const csv = rows.map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n');
     this.download(new Blob([csv], { type: 'text/csv' }), `account-activity-${Date.now()}.csv`);
   }
 
-  refreshActivity(): void {
-    this.activity = this.activitySvc
-      .recent()
-      .slice(0, 8)
-      .map((r) => ({
-        time: this.timeOf(r.at),
-        label: r.label,
-        device: r.device,
-      }));
+  // ── Loading ────────────────────────────────────────────────────────────────
+  private async refresh(): Promise<void> {
+    try {
+      const [account, sessions, activity] = await Promise.all([
+        this.accountSvc.me(),
+        this.loadSessions(),
+        this.loadActivity(),
+      ]);
+      this.applyAccount(account);
+      this.sessions = sessions;
+      this.activity = activity;
+    } catch {
+      /* keep whatever we already painted */
+    }
+  }
+
+  private async loadSessions(): Promise<SessionRow[]> {
+    const raw = await this.accountSvc.sessions();
+    return raw.map((s: SessionView) => ({
+      device: s.device,
+      meta: `${s.ip || 'unknown IP'} · ${this.timeOf(s.createdAt)}`,
+      icon: /iphone|android|mobile/i.test(s.device) ? 'smartphone' : 'laptop_mac',
+      current: s.current,
+      lastActive: this.relative(s.lastSeenAt),
+    }));
+  }
+
+  private async loadActivity(): Promise<ActivityRow[]> {
+    const raw = await this.accountSvc.activity(8);
+    return raw.map((a: AuditView) => ({
+      time: this.timeOf(a.at),
+      label: a.action,
+      device: a.device,
+      status: a.status,
+    }));
+  }
+
+  private applyAccount(a: AccountView): void {
+    this.user = {
+      name: a.fullName,
+      username: `@${a.username}`,
+      email: a.email,
+      role: a.role,
+      phone: a.phone,
+      language: a.language,
+      timezone: a.timezone,
+      accountId: a.accountId,
+    };
+    this.security = {
+      mfa: a.mfaEnabled ? 'Enabled' : 'Disabled',
+      passwordChanged: a.passwordChangedAt ? this.relative(a.passwordChangedAt) : '—',
+      loginAlerts: 'Enabled',
+      trustedDevice: this.sessions.find((s) => s.current)?.device ?? '',
+      sessionTimeout: `${a.sessionTimeoutMinutes} minutes`,
+      apiAccess: a.apiAccessEnabled ? 'Enabled' : 'Disabled',
+    };
+    this.prefs = {
+      theme: a.preferences.theme,
+      density: a.preferences.density,
+      landing: a.preferences.landingPage,
+      timeFormat: a.preferences.timeFormat,
+      autoRefresh: a.preferences.autoRefresh,
+    };
+    this.notifications = NOTIFICATION_LABELS.map((l) => ({
+      key: l.key,
+      label: l.label,
+      on: a.notifications?.[l.key] ?? false,
+    }));
+  }
+
+  /** Run a backend mutation, sync the cached account, and refresh derived rows. */
+  private async guarded(fn: () => Promise<AccountView>): Promise<void> {
+    this.busy = true;
+    try {
+      const account = await fn();
+      this.applyAccount(account);
+      this.auth.updateCachedAccount(account);
+    } catch {
+      await this.refresh();
+    } finally {
+      this.busy = false;
+    }
   }
 
   private download(blob: Blob, name: string): void {
@@ -190,48 +310,33 @@ export class ProfilePageComponent implements OnInit {
     URL.revokeObjectURL(url);
   }
 
-  private timeOf(at: string): string {
+  private timeOf(at?: string): string {
+    if (!at) {
+      return '';
+    }
     const d = new Date(at);
     return Number.isNaN(d.getTime()) ? '' : d.toLocaleTimeString('en-GB', { hour12: false });
   }
 
-  private savePrefs(): void {
-    try {
-      const notif: Record<string, boolean> = {};
-      this.notifications.forEach((n) => (notif[n.key] = n.on));
-      localStorage.setItem(
-        ProfilePageComponent.PREFS_KEY,
-        JSON.stringify({ ...this.prefs, notif }),
-      );
-    } catch {
-      /* storage unavailable */
+  private relative(at?: string): string {
+    if (!at) {
+      return '—';
     }
-  }
-
-  private loadPrefs(): void {
-    try {
-      const raw = localStorage.getItem(ProfilePageComponent.PREFS_KEY);
-      if (!raw) {
-        return;
-      }
-      const saved = JSON.parse(raw) as Partial<typeof this.prefs> & {
-        notif?: Record<string, boolean>;
-      };
-      this.prefs = {
-        theme: saved.theme ?? this.prefs.theme,
-        density: saved.density ?? this.prefs.density,
-        landing: saved.landing ?? this.prefs.landing,
-        timeFormat: saved.timeFormat ?? this.prefs.timeFormat,
-        autoRefresh: saved.autoRefresh ?? this.prefs.autoRefresh,
-      };
-      if (saved.notif) {
-        this.notifications = this.notifications.map((n) => ({
-          ...n,
-          on: saved.notif![n.key] ?? n.on,
-        }));
-      }
-    } catch {
-      /* ignore corrupt storage */
+    const t = new Date(at).getTime();
+    if (Number.isNaN(t)) {
+      return '—';
     }
+    const mins = Math.max(0, Math.round((Date.now() - t) / 60000));
+    if (mins < 1) {
+      return 'now';
+    }
+    if (mins < 60) {
+      return `${mins}m ago`;
+    }
+    const hrs = Math.round(mins / 60);
+    if (hrs < 24) {
+      return `${hrs}h ago`;
+    }
+    return `${Math.round(hrs / 24)}d ago`;
   }
 }

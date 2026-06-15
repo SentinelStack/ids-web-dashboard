@@ -14,7 +14,7 @@
       <div class="who-text">
         <div class="name-row">
           <h2>{{ user.name }}</h2>
-          <span class="badge-role">Standard User</span>
+          <span class="badge-role">{{ user.role }}</span>
         </div>
         <p class="handle">
           <span class="material-symbols-outlined">alternate_email</span>{{ user.username }}
@@ -24,9 +24,11 @@
       </div>
     </div>
     <div class="head-actions">
-      <button>Edit Profile</button>
-      <button>Change Password</button>
-      <button class="primary">Security Settings</button>
+      <button (click)="editProfile()" [disabled]="busy">Edit Profile</button>
+      <button (click)="changePassword()" [disabled]="busy">Change Password</button>
+      <button class="primary" (click)="toggleMfa()" [disabled]="busy">
+        {{ security.mfa === 'Enabled' ? 'Disable MFA' : 'Enable MFA' }}
+      </button>
     </div>
   </section>
 
@@ -183,9 +185,13 @@
           </div>
         </div>
         <div class="row-actions">
-          <button>Manage MFA</button>
-          <button>Review Sessions</button>
-          <button class="purple-btn">Update Password</button>
+          <button (click)="toggleMfa()" [disabled]="busy">
+            {{ security.mfa === 'Enabled' ? 'Disable MFA' : 'Enable MFA' }}
+          </button>
+          @if (activeSessions > 1) {
+            <button (click)="signOutOthers()" [disabled]="busy">Review Sessions</button>
+          }
+          <button class="purple-btn" (click)="changePassword()" [disabled]="busy">Update Password</button>
         </div>
       </section>
 
@@ -254,7 +260,9 @@
               <td class="mono dim">{{ a.time }}</td>
               <td>{{ a.label }}</td>
               <td class="dim">{{ a.device }}</td>
-              <td class="ok">Success</td>
+              <td [class.ok]="a.status === 'Success'" [class.dim]="a.status !== 'Success'">
+                {{ a.status }}
+              </td>
             </tr>
           }
           @if (activity.length === 0) {

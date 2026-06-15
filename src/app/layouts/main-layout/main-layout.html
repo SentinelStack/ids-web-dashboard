@@ -42,7 +42,7 @@
           routerLink="/app/profile"
           routerLinkActive="active"
           class="avatar-link"
-          title="Account profile"
+          [title]="operatorName"
         >
           <img
             class="avatar"
@@ -50,6 +50,9 @@
             alt="Analyst"
           />
         </a>
+        <button class="logout" type="button" (click)="logout()" title="Sign out">
+          <span class="material-symbols-outlined">logout</span>
+        </button>
       </div>
     </div>
   </header>

@@ -23,18 +23,36 @@
         </button>
       </div>
 
+      @if (error) {
+        <p class="auth-error">{{ error }}</p>
+      }
+
       @if (activeTab === 'login') {
-        <form class="form" novalidate>
+        <form class="form" novalidate (ngSubmit)="onLogin()">
           <label for="identifier">Operator ID / Email</label>
           <div class="field">
             <span class="material-symbols-outlined">person</span>
-            <input id="identifier" type="text" placeholder="Enter credentials" />
+            <input
+              id="identifier"
+              name="username"
+              type="text"
+              placeholder="Enter credentials"
+              autocomplete="username"
+              [(ngModel)]="username"
+            />
           </div>
 
           <label for="passkey">Security Passkey</label>
           <div class="field">
             <span class="material-symbols-outlined">lock</span>
-            <input id="passkey" type="password" placeholder="••••••••••••" />
+            <input
+              id="passkey"
+              name="password"
+              type="password"
+              placeholder="••••••••••••"
+              autocomplete="current-password"
+              [(ngModel)]="password"
+            />
           </div>
 
           <div class="row">
@@ -45,34 +63,41 @@
             <a href="#">Reset Passkey?</a>
           </div>
 
-          <button class="primary" routerLink="/app/dashboard" type="button">
+          <button class="primary" type="submit" [disabled]="busy">
             <span class="material-symbols-outlined">power_settings_new</span>
-            Initialize Session
+            {{ busy ? 'Authenticating…' : 'Initialize Session' }}
           </button>
         </form>
       } @else {
-        <form class="form" novalidate>
+        <form class="form" novalidate (ngSubmit)="onRegister()">
           <label for="operator">Operator Name</label>
           <div class="field">
             <span class="material-symbols-outlined">badge</span>
-            <input id="operator" type="text" placeholder="Agent username" />
+            <input id="operator" name="regUsername" type="text" placeholder="Agent username" [(ngModel)]="regUsername" />
           </div>
 
           <label for="reg-email">Email</label>
           <div class="field">
             <span class="material-symbols-outlined">mail</span>
-            <input id="reg-email" type="email" placeholder="name@aegis.local" />
+            <input id="reg-email" name="regEmail" type="email" placeholder="name@aegis.local" [(ngModel)]="regEmail" />
           </div>
 
           <label for="reg-pass">Create Passkey</label>
           <div class="field">
             <span class="material-symbols-outlined">vpn_key</span>
-            <input id="reg-pass" type="password" placeholder="Minimum 12 chars" />
+            <input
+              id="reg-pass"
+              name="regPassword"
+              type="password"
+              placeholder="Minimum 8 chars"
+              autocomplete="new-password"
+              [(ngModel)]="regPassword"
+            />
           </div>
 
-          <button class="primary" type="button">
+          <button class="primary" type="submit" [disabled]="busy">
             <span class="material-symbols-outlined">how_to_reg</span>
-            Register Operator
+            {{ busy ? 'Creating…' : 'Register Operator' }}
           </button>
         </form>
       }
