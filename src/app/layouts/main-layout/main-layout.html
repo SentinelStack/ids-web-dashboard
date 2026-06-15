@@ -36,7 +36,59 @@
 
       <div class="actions">
         <span class="material-symbols-outlined">monitor_heart</span>
-        <span class="material-symbols-outlined">notifications</span>
+
+        <div class="notif-wrap" (click)="$event.stopPropagation()">
+          <button
+            class="notif-btn"
+            type="button"
+            (click)="toggleNotifications($event)"
+            [class.active]="notifOpen"
+            title="Notifications"
+          >
+            <span class="material-symbols-outlined">notifications</span>
+            @if (unreadCount > 0) {
+              <span class="notif-badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
+            }
+          </button>
+
+          @if (notifOpen) {
+            <div class="notif-panel">
+              <div class="notif-head">
+                <span>Notifications</span>
+                @if (notifications.length) {
+                  <span class="notif-count">{{ notifications.length }} recent</span>
+                }
+              </div>
+
+              <div class="notif-list">
+                @for (n of notifications; track $index) {
+                  <button class="notif-item" type="button" (click)="goToIncidents()">
+                    <span class="dot" [class]="n.level"></span>
+                    <div class="ni-body">
+                      <p class="ni-title">{{ n.title }}</p>
+                      <p class="ni-meta">
+                        <span class="sev" [class]="n.level">{{ n.severity }}</span>
+                        SRC {{ n.source }}
+                      </p>
+                    </div>
+                    <span class="ni-time">{{ n.time }}</span>
+                  </button>
+                } @empty {
+                  <div class="notif-empty">
+                    <span class="material-symbols-outlined">notifications_off</span>
+                    <p>No recent alerts</p>
+                  </div>
+                }
+              </div>
+
+              <button class="notif-foot" type="button" (click)="goToIncidents()">
+                View all incidents
+                <span class="material-symbols-outlined">arrow_forward</span>
+              </button>
+            </div>
+          }
+        </div>
+
         <span class="material-symbols-outlined">settings</span>
         <a
           routerLink="/app/profile"
