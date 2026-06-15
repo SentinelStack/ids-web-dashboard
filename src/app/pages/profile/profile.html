@@ -492,56 +492,70 @@
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
-      <form class="edit-form" novalidate (ngSubmit)="savePassword()">
-        <label class="field" [class.invalid]="pwErrors['current']">
-          <span class="k">Current Password</span>
-          <input
-            type="password"
-            name="current"
-            [(ngModel)]="pwForm.current"
-            autocomplete="current-password"
-          />
-          @if (pwErrors['current']) {
-            <span class="err">{{ pwErrors['current'] }}</span>
-          }
-        </label>
-        <label class="field" [class.invalid]="pwErrors['next']">
-          <span class="k">New Password</span>
-          <input
-            type="password"
-            name="next"
-            [(ngModel)]="pwForm.next"
-            autocomplete="new-password"
-          />
-          <span class="hint">At least 8 characters, with a letter and a number.</span>
-          @if (pwErrors['next']) {
-            <span class="err">{{ pwErrors['next'] }}</span>
-          }
-        </label>
-        <label class="field" [class.invalid]="pwErrors['confirm']">
-          <span class="k">Confirm New Password</span>
-          <input
-            type="password"
-            name="confirm"
-            [(ngModel)]="pwForm.confirm"
-            autocomplete="new-password"
-          />
-          @if (pwErrors['confirm']) {
-            <span class="err">{{ pwErrors['confirm'] }}</span>
-          }
-        </label>
-        @if (pwServerError) {
-          <p class="form-error">{{ pwServerError }}</p>
-        }
-        <div class="form-actions">
-          <button type="button" class="ghost" (click)="closePassword()" [disabled]="busy">
-            Cancel
-          </button>
-          <button type="submit" class="save" [disabled]="busy">
-            {{ busy ? 'Updating…' : 'Update Password' }}
-          </button>
+      @if (!mfaActive) {
+        <div class="gate-note">
+          <span class="material-symbols-outlined">shield_lock</span>
+          <p>
+            For your security, you must enable <strong>two-factor authentication</strong> before you
+            can change your password.
+          </p>
         </div>
-      </form>
+        <div class="form-actions">
+          <button type="button" class="ghost" (click)="closePassword()">Cancel</button>
+          <button type="button" class="save" (click)="switchToMfaSetup()">Enable 2FA</button>
+        </div>
+      } @else {
+        <form class="edit-form" novalidate (ngSubmit)="savePassword()">
+          <label class="field" [class.invalid]="pwErrors['current']">
+            <span class="k">Current Password</span>
+            <input
+              type="password"
+              name="current"
+              [(ngModel)]="pwForm.current"
+              autocomplete="current-password"
+            />
+            @if (pwErrors['current']) {
+              <span class="err">{{ pwErrors['current'] }}</span>
+            }
+          </label>
+          <label class="field" [class.invalid]="pwErrors['next']">
+            <span class="k">New Password</span>
+            <input
+              type="password"
+              name="next"
+              [(ngModel)]="pwForm.next"
+              autocomplete="new-password"
+            />
+            <span class="hint">At least 8 characters, with a letter and a number.</span>
+            @if (pwErrors['next']) {
+              <span class="err">{{ pwErrors['next'] }}</span>
+            }
+          </label>
+          <label class="field" [class.invalid]="pwErrors['confirm']">
+            <span class="k">Confirm New Password</span>
+            <input
+              type="password"
+              name="confirm"
+              [(ngModel)]="pwForm.confirm"
+              autocomplete="new-password"
+            />
+            @if (pwErrors['confirm']) {
+              <span class="err">{{ pwErrors['confirm'] }}</span>
+            }
+          </label>
+          @if (pwServerError) {
+            <p class="form-error">{{ pwServerError }}</p>
+          }
+          <div class="form-actions">
+            <button type="button" class="ghost" (click)="closePassword()" [disabled]="busy">
+              Cancel
+            </button>
+            <button type="submit" class="save" [disabled]="busy">
+              {{ busy ? 'Updating…' : 'Update Password' }}
+            </button>
+          </div>
+        </form>
+      }
     </div>
   </div>
 }

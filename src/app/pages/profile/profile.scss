@@ -1092,6 +1092,32 @@ $ink: #e9f1fb;
   color: $muted-2;
 }
 
+.gate-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 14px;
+  border-radius: 11px;
+  background: rgb(255 206 107 / 8%);
+  border: 1px solid rgb(255 206 107 / 28%);
+  .material-symbols-outlined {
+    font-size: 24px;
+    color: $amber;
+    flex-shrink: 0;
+  }
+  p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.55;
+    color: #d6e2ef;
+    strong {
+      color: $amber;
+      font-weight: 600;
+    }
+  }
+}
+
 .code-input {
   text-align: center;
   font-family: 'JetBrains Mono', monospace !important;

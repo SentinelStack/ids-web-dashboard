@@ -290,6 +290,12 @@ export class ProfilePageComponent implements OnInit {
     this.showPasswordModal = false;
   }
 
+  /** Password changes require 2FA; jump straight to the setup flow. */
+  switchToMfaSetup(): void {
+    this.showPasswordModal = false;
+    void this.openMfa();
+  }
+
   async savePassword(): Promise<void> {
     if (this.busy) {
       return;
