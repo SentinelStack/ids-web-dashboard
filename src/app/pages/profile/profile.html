@@ -1,0 +1,271 @@
+<div class="profile-page fade-in">
+  <div class="page-head">
+    <h1>User Account</h1>
+    <p>Manage your account information, security settings and platform preferences.</p>
+  </div>
+
+  <!-- Profile header -->
+  <section class="card profile-head">
+    <div class="who">
+      <div class="avatar-ring">
+        <span class="material-symbols-outlined">person</span>
+        <span class="online"></span>
+      </div>
+      <div class="who-text">
+        <div class="name-row">
+          <h2>{{ user.name }}</h2>
+          <span class="badge-role">Standard User</span>
+        </div>
+        <p class="handle">
+          <span class="material-symbols-outlined">alternate_email</span>{{ user.username }}
+        </p>
+        <p class="mono dim">{{ user.email }}</p>
+        <p class="status-line">STATUS: <span class="ok">Active</span></p>
+      </div>
+    </div>
+    <div class="head-actions">
+      <button>Edit Profile</button>
+      <button>Change Password</button>
+      <button class="primary">Security Settings</button>
+    </div>
+  </section>
+
+  <!-- KPI row -->
+  <div class="kpi-row">
+    <div class="card kpi accent">
+      <p class="kpi-label">Account Status</p>
+      <div class="kpi-value">
+        <span class="value">Active</span><span class="tag ok">verified</span>
+      </div>
+    </div>
+    <div class="card kpi">
+      <p class="kpi-label">MFA Status</p>
+      <div class="kpi-value">
+        <span class="value">{{ security.mfa }}</span
+        ><span class="tag cyan">protected</span>
+      </div>
+    </div>
+    <div class="card kpi">
+      <p class="kpi-label">Active Sessions</p>
+      <div class="kpi-value">
+        <span class="value">{{ activeSessions }}</span
+        ><span class="tag dim">web + mobile</span>
+      </div>
+    </div>
+    <div class="card kpi">
+      <p class="kpi-label">Notifications</p>
+      <div class="kpi-value">
+        <span class="value">{{ notificationsEnabled ? 'Enabled' : 'Off' }}</span
+        ><span class="tag amber">critical only</span>
+      </div>
+    </div>
+    <div class="card kpi">
+      <p class="kpi-label">Last Login</p>
+      <div class="kpi-value">
+        <span class="value sm">{{ lastLogin }}</span
+        ><span class="tag dim">trusted device</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Two columns -->
+  <div class="grid">
+    <!-- LEFT -->
+    <div class="col">
+      <section class="card panel">
+        <div class="panel-head">
+          <h4>Basic Information</h4>
+          <span class="material-symbols-outlined">person</span>
+        </div>
+        <div class="info-grid">
+          <div>
+            <p class="k">Full Name</p>
+            <p>{{ user.name }}</p>
+          </div>
+          <div>
+            <p class="k">Username</p>
+            <p>{{ user.username }}</p>
+          </div>
+          <div>
+            <p class="k">Email</p>
+            <p>{{ user.email }}</p>
+          </div>
+          <div>
+            <p class="k">Phone</p>
+            <p>{{ user.phone }}</p>
+          </div>
+          <div>
+            <p class="k">Language</p>
+            <p>{{ user.language }}</p>
+          </div>
+          <div>
+            <p class="k">Timezone</p>
+            <p>{{ user.timezone }}</p>
+          </div>
+          <div>
+            <p class="k">Account ID</p>
+            <p class="mono">{{ user.accountId }}</p>
+          </div>
+          <div>
+            <p class="k">Account Status</p>
+            <p class="ok">Active</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card panel">
+        <div class="panel-head"><h4>Account Preferences</h4></div>
+        <div class="prefs">
+          <div class="pref">
+            <span>Theme</span><span class="purple">{{ prefs.theme }}</span>
+          </div>
+          <div class="pref">
+            <span>Dashboard Density</span><span>{{ prefs.density }}</span>
+          </div>
+          <div class="pref">
+            <span>Default Landing Page</span><span>{{ prefs.landing }}</span>
+          </div>
+          <div class="pref">
+            <span>Time Format</span><span>{{ prefs.timeFormat }}</span>
+          </div>
+          <div class="pref">
+            <span>Auto-refresh Dashboard</span>
+            <button class="switch" [class.on]="prefs.autoRefresh" (click)="toggleAutoRefresh()">
+              <i></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card panel">
+        <div class="panel-head"><h4>Notification Preferences</h4></div>
+        <div class="notifs">
+          @for (n of notifications; track n.key) {
+            <div class="notif">
+              <span>{{ n.label }}</span>
+              <button class="pill" [class.on]="n.on" (click)="toggleNotification(n)">
+                {{ n.on ? 'Enabled' : 'Disabled' }}
+              </button>
+            </div>
+          }
+        </div>
+      </section>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="col wide">
+      <section class="card panel">
+        <div class="panel-head"><h4>Security Settings</h4></div>
+        <div class="sec-grid">
+          <div>
+            <p class="k">Multi-Factor Authentication</p>
+            <p class="cyan">{{ security.mfa }}</p>
+          </div>
+          <div>
+            <p class="k">Password Last Changed</p>
+            <p>{{ security.passwordChanged }}</p>
+          </div>
+          <div>
+            <p class="k">Login Alerts</p>
+            <p class="cyan">{{ security.loginAlerts }}</p>
+          </div>
+          <div>
+            <p class="k">Trusted Device</p>
+            <p>{{ security.trustedDevice }}</p>
+          </div>
+          <div>
+            <p class="k">Session Timeout</p>
+            <p>{{ security.sessionTimeout }}</p>
+          </div>
+          <div>
+            <p class="k">API Access</p>
+            <p class="dim">{{ security.apiAccess }}</p>
+          </div>
+        </div>
+        <div class="row-actions">
+          <button>Manage MFA</button>
+          <button>Review Sessions</button>
+          <button class="purple-btn">Update Password</button>
+        </div>
+      </section>
+
+      <section class="card panel">
+        <div class="panel-head"><h4>Active Sessions</h4></div>
+        <div class="sessions">
+          @for (s of sessions; track $index) {
+            <div class="session">
+              <div class="s-left">
+                <span class="material-symbols-outlined">{{ s.icon }}</span>
+                <div>
+                  <p class="s-dev">{{ s.device }}</p>
+                  <p class="dim">{{ s.meta }}</p>
+                </div>
+              </div>
+              <div class="s-right">
+                <span class="s-badge" [class.cur]="s.current">{{
+                  s.current ? 'Current Session' : 'Active'
+                }}</span>
+                <p class="dim">Last active: {{ s.lastActive }}</p>
+              </div>
+            </div>
+          }
+        </div>
+        @if (activeSessions > 1) {
+          <button class="danger-btn" (click)="signOutOthers()">Sign Out Other Sessions</button>
+        }
+      </section>
+
+      <section class="card panel">
+        <div class="panel-head"><h4>Privacy &amp; Data</h4></div>
+        <ul class="privacy">
+          @for (p of privacy; track $index) {
+            <li>{{ p }}</li>
+          }
+        </ul>
+        <div class="row-actions">
+          <button (click)="downloadAccountData()">Download Account Data</button>
+          <button>Privacy Settings</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Recent activity (real, from in-app navigation) -->
+  <section class="card panel">
+    <div class="panel-head between">
+      <h4>Recent Account Activity</h4>
+      <button class="link" (click)="downloadHistory()">
+        Download Full History <span class="material-symbols-outlined">download</span>
+      </button>
+    </div>
+    <div class="activity">
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Activity</th>
+            <th>Device</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (a of activity; track $index) {
+            <tr>
+              <td class="mono dim">{{ a.time }}</td>
+              <td>{{ a.label }}</td>
+              <td class="dim">{{ a.device }}</td>
+              <td class="ok">Success</td>
+            </tr>
+          }
+          @if (activity.length === 0) {
+            <tr>
+              <td colspan="4" class="empty">
+                No recorded activity yet — navigate the console and it will appear here.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

@@ -5,6 +5,7 @@ import { DashboardPageComponent } from './pages/dashboard/dashboard';
 import { IncidentsPageComponent } from './pages/incidents/incidents';
 import { LogViewerPageComponent } from './pages/log-viewer/log-viewer';
 import { LoginPageComponent } from './pages/login/login';
+import { ProfilePageComponent } from './pages/profile/profile';
 import { ReportsPageComponent } from './pages/reports/reports';
 import { RulesPageComponent } from './pages/rules/rules';
 import { SupportPageComponent } from './pages/support/support';
@@ -27,6 +28,7 @@ export const routes: Routes = [
       { path: 'rules', component: RulesPageComponent },
       { path: 'logs', component: LogViewerPageComponent },
       { path: 'support', component: SupportPageComponent },
+      { path: 'profile', component: ProfilePageComponent },
     ],
   },
   { path: '**', redirectTo: 'login' },

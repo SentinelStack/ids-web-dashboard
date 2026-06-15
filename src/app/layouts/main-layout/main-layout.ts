@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+
+import { ActivityService } from '../../core/services/activity.service';
 
 @Component({
   selector: 'app-main-layout',
@@ -7,4 +9,11 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
   templateUrl: './main-layout.html',
   styleUrl: './main-layout.scss',
 })
-export class MainLayoutComponent {}
+export class MainLayoutComponent implements OnInit {
+  private readonly activity = inject(ActivityService);
+
+  ngOnInit(): void {
+    // Record real in-app navigation for the Profile activity log.
+    this.activity.start();
+  }
+}
