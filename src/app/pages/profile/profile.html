@@ -24,8 +24,8 @@
       </div>
     </div>
     <div class="head-actions">
-      <button (click)="editProfile()" [disabled]="busy">Edit Profile</button>
-      <button (click)="changePassword()" [disabled]="busy">Change Password</button>
+      <button (click)="startEditProfile()" [disabled]="busy || editingProfile">Edit Profile</button>
+      <button (click)="openPassword()" [disabled]="busy">Change Password</button>
       <button class="primary" (click)="toggleMfa()" [disabled]="busy">
         {{ security.mfa === 'Enabled' ? 'Disable MFA' : 'Enable MFA' }}
       </button>
@@ -75,68 +75,199 @@
     <!-- LEFT -->
     <div class="col">
       <section class="card panel">
-        <div class="panel-head">
+        <div class="panel-head between">
           <h4>Basic Information</h4>
-          <span class="material-symbols-outlined">person</span>
+          @if (!editingProfile) {
+            <button class="edit-link" (click)="startEditProfile()" [disabled]="busy">
+              <span class="material-symbols-outlined">edit</span> Edit
+            </button>
+          }
         </div>
-        <div class="info-grid">
-          <div>
-            <p class="k">Full Name</p>
-            <p>{{ user.name }}</p>
+
+        @if (!editingProfile) {
+          <div class="info-grid">
+            <div>
+              <p class="k">Full Name</p>
+              <p>{{ user.name }}</p>
+            </div>
+            <div>
+              <p class="k">Username</p>
+              <p>{{ user.username }}</p>
+            </div>
+            <div>
+              <p class="k">Email</p>
+              <p>{{ user.email }}</p>
+            </div>
+            <div>
+              <p class="k">Phone</p>
+              <p>{{ user.phone }}</p>
+            </div>
+            <div>
+              <p class="k">Language</p>
+              <p>{{ user.language }}</p>
+            </div>
+            <div>
+              <p class="k">Timezone</p>
+              <p>{{ user.timezone }}</p>
+            </div>
+            <div>
+              <p class="k">Account ID</p>
+              <p class="mono">{{ user.accountId }}</p>
+            </div>
+            <div>
+              <p class="k">Account Status</p>
+              <p class="ok">Active</p>
+            </div>
           </div>
-          <div>
-            <p class="k">Username</p>
-            <p>{{ user.username }}</p>
-          </div>
-          <div>
-            <p class="k">Email</p>
-            <p>{{ user.email }}</p>
-          </div>
-          <div>
-            <p class="k">Phone</p>
-            <p>{{ user.phone }}</p>
-          </div>
-          <div>
-            <p class="k">Language</p>
-            <p>{{ user.language }}</p>
-          </div>
-          <div>
-            <p class="k">Timezone</p>
-            <p>{{ user.timezone }}</p>
-          </div>
-          <div>
-            <p class="k">Account ID</p>
-            <p class="mono">{{ user.accountId }}</p>
-          </div>
-          <div>
-            <p class="k">Account Status</p>
-            <p class="ok">Active</p>
-          </div>
-        </div>
+        } @else {
+          <form class="edit-form" novalidate (ngSubmit)="saveProfile()">
+            <div class="form-grid">
+              <label class="field" [class.invalid]="profileErrors['fullName']">
+                <span class="k">Full Name</span>
+                <input
+                  type="text"
+                  name="fullName"
+                  [(ngModel)]="profileForm.fullName"
+                  maxlength="80"
+                />
+                @if (profileErrors['fullName']) {
+                  <span class="err">{{ profileErrors['fullName'] }}</span>
+                }
+              </label>
+              <label class="field" [class.invalid]="profileErrors['email']">
+                <span class="k">Email</span>
+                <input
+                  type="email"
+                  name="email"
+                  [(ngModel)]="profileForm.email"
+                  autocomplete="email"
+                />
+                @if (profileErrors['email']) {
+                  <span class="err">{{ profileErrors['email'] }}</span>
+                }
+              </label>
+              <label class="field" [class.invalid]="profileErrors['phone']">
+                <span class="k">Phone</span>
+                <input type="tel" name="phone" [(ngModel)]="profileForm.phone" />
+                @if (profileErrors['phone']) {
+                  <span class="err">{{ profileErrors['phone'] }}</span>
+                }
+              </label>
+              <label class="field" [class.invalid]="profileErrors['language']">
+                <span class="k">Language</span>
+                <input
+                  type="text"
+                  name="language"
+                  [(ngModel)]="profileForm.language"
+                  maxlength="40"
+                />
+                @if (profileErrors['language']) {
+                  <span class="err">{{ profileErrors['language'] }}</span>
+                }
+              </label>
+              <label class="field" [class.invalid]="profileErrors['timezone']">
+                <span class="k">Timezone</span>
+                <input
+                  type="text"
+                  name="timezone"
+                  [(ngModel)]="profileForm.timezone"
+                  maxlength="60"
+                />
+                @if (profileErrors['timezone']) {
+                  <span class="err">{{ profileErrors['timezone'] }}</span>
+                }
+              </label>
+            </div>
+            @if (profileServerError) {
+              <p class="form-error">{{ profileServerError }}</p>
+            }
+            <div class="form-actions">
+              <button type="button" class="ghost" (click)="cancelEditProfile()" [disabled]="busy">
+                Cancel
+              </button>
+              <button type="submit" class="save" [disabled]="busy">
+                {{ busy ? 'Saving…' : 'Save Changes' }}
+              </button>
+            </div>
+          </form>
+        }
       </section>
 
       <section class="card panel">
-        <div class="panel-head"><h4>Account Preferences</h4></div>
-        <div class="prefs">
-          <div class="pref">
-            <span>Theme</span><span class="purple">{{ prefs.theme }}</span>
-          </div>
-          <div class="pref">
-            <span>Dashboard Density</span><span>{{ prefs.density }}</span>
-          </div>
-          <div class="pref">
-            <span>Default Landing Page</span><span>{{ prefs.landing }}</span>
-          </div>
-          <div class="pref">
-            <span>Time Format</span><span>{{ prefs.timeFormat }}</span>
-          </div>
-          <div class="pref">
-            <span>Auto-refresh Dashboard</span>
-            <button class="switch" [class.on]="prefs.autoRefresh" (click)="toggleAutoRefresh()">
-              <i></i>
+        <div class="panel-head between">
+          <h4>Account Preferences</h4>
+          @if (!editingPrefs) {
+            <button class="edit-link" (click)="startEditPrefs()" [disabled]="busy">
+              <span class="material-symbols-outlined">edit</span> Edit
             </button>
-          </div>
+          }
         </div>
+
+        @if (!editingPrefs) {
+          <div class="prefs">
+            <div class="pref">
+              <span>Theme</span><span class="purple">{{ prefs.theme }}</span>
+            </div>
+            <div class="pref">
+              <span>Dashboard Density</span><span>{{ prefs.density }}</span>
+            </div>
+            <div class="pref">
+              <span>Default Landing Page</span><span>{{ prefs.landing }}</span>
+            </div>
+            <div class="pref">
+              <span>Time Format</span><span>{{ prefs.timeFormat }}</span>
+            </div>
+            <div class="pref">
+              <span>Auto-refresh Dashboard</span>
+              <button class="switch" [class.on]="prefs.autoRefresh" (click)="toggleAutoRefresh()">
+                <i></i>
+              </button>
+            </div>
+          </div>
+        } @else {
+          <form class="edit-form" novalidate (ngSubmit)="savePrefs()">
+            <label class="field row">
+              <span class="k">Theme</span>
+              <select name="theme" [(ngModel)]="prefsForm.theme">
+                @for (o of themeOptions; track o) {
+                  <option [value]="o">{{ o }}</option>
+                }
+              </select>
+            </label>
+            <label class="field row">
+              <span class="k">Dashboard Density</span>
+              <select name="density" [(ngModel)]="prefsForm.density">
+                @for (o of densityOptions; track o) {
+                  <option [value]="o">{{ o }}</option>
+                }
+              </select>
+            </label>
+            <label class="field row">
+              <span class="k">Default Landing Page</span>
+              <select name="landing" [(ngModel)]="prefsForm.landing">
+                @for (o of landingOptions; track o) {
+                  <option [value]="o">{{ o }}</option>
+                }
+              </select>
+            </label>
+            <label class="field row">
+              <span class="k">Time Format</span>
+              <select name="timeFormat" [(ngModel)]="prefsForm.timeFormat">
+                @for (o of timeFormatOptions; track o) {
+                  <option [value]="o">{{ o }}</option>
+                }
+              </select>
+            </label>
+            <div class="form-actions">
+              <button type="button" class="ghost" (click)="cancelEditPrefs()" [disabled]="busy">
+                Cancel
+              </button>
+              <button type="submit" class="save" [disabled]="busy">
+                {{ busy ? 'Saving…' : 'Save' }}
+              </button>
+            </div>
+          </form>
+        }
       </section>
 
       <section class="card panel">
@@ -191,7 +322,7 @@
           @if (activeSessions > 1) {
             <button (click)="signOutOthers()" [disabled]="busy">Review Sessions</button>
           }
-          <button class="purple-btn" (click)="changePassword()" [disabled]="busy">
+          <button class="purple-btn" (click)="openPassword()" [disabled]="busy">
             Update Password
           </button>
         </div>
@@ -279,3 +410,67 @@
     </div>
   </section>
 </div>
+
+<!-- Change-password modal -->
+@if (showPasswordModal) {
+  <div class="modal-backdrop" (click)="closePassword()">
+    <div class="modal card" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h3>Change Password</h3>
+        <button class="x" (click)="closePassword()" [disabled]="busy">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <form class="edit-form" novalidate (ngSubmit)="savePassword()">
+        <label class="field" [class.invalid]="pwErrors['current']">
+          <span class="k">Current Password</span>
+          <input
+            type="password"
+            name="current"
+            [(ngModel)]="pwForm.current"
+            autocomplete="current-password"
+          />
+          @if (pwErrors['current']) {
+            <span class="err">{{ pwErrors['current'] }}</span>
+          }
+        </label>
+        <label class="field" [class.invalid]="pwErrors['next']">
+          <span class="k">New Password</span>
+          <input
+            type="password"
+            name="next"
+            [(ngModel)]="pwForm.next"
+            autocomplete="new-password"
+          />
+          <span class="hint">At least 8 characters, with a letter and a number.</span>
+          @if (pwErrors['next']) {
+            <span class="err">{{ pwErrors['next'] }}</span>
+          }
+        </label>
+        <label class="field" [class.invalid]="pwErrors['confirm']">
+          <span class="k">Confirm New Password</span>
+          <input
+            type="password"
+            name="confirm"
+            [(ngModel)]="pwForm.confirm"
+            autocomplete="new-password"
+          />
+          @if (pwErrors['confirm']) {
+            <span class="err">{{ pwErrors['confirm'] }}</span>
+          }
+        </label>
+        @if (pwServerError) {
+          <p class="form-error">{{ pwServerError }}</p>
+        }
+        <div class="form-actions">
+          <button type="button" class="ghost" (click)="closePassword()" [disabled]="busy">
+            Cancel
+          </button>
+          <button type="submit" class="save" [disabled]="busy">
+            {{ busy ? 'Updating…' : 'Update Password' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

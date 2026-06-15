@@ -85,6 +85,26 @@ export class ProfilePageComponent implements OnInit {
 
   busy = false;
 
+  // ── Edit states ───────────────────────────────────────────────────────────
+  readonly themeOptions = ['Dark', 'Light', 'System'];
+  readonly densityOptions = ['Compact', 'Comfortable', 'Spacious'];
+  readonly landingOptions = ['Overview', 'Traffic', 'Incidents', 'Topology', 'Rules'];
+  readonly timeFormatOptions = ['24-hour', '12-hour'];
+
+  editingProfile = false;
+  profileForm = { fullName: '', email: '', phone: '', language: '', timezone: '' };
+  profileErrors: Record<string, string> = {};
+  profileServerError = '';
+
+  editingPrefs = false;
+  prefsForm = { theme: 'Dark', density: 'Compact', landing: 'Overview', timeFormat: '24-hour' };
+
+  showPasswordModal = false;
+  pwForm = { current: '', next: '', confirm: '' };
+  pwErrors: Record<string, string> = {};
+  pwServerError = '';
+  pwSuccess = false;
+
   ngOnInit(): void {
     // Paint instantly from the cached account, then refresh from the backend.
     const cached = this.auth.account;
@@ -128,42 +148,200 @@ export class ProfilePageComponent implements OnInit {
     await this.guarded(() => this.accountSvc.updateNotifications(map));
   }
 
-  async editProfile(): Promise<void> {
-    const fullName = window.prompt('Full name', this.user.name)?.trim();
-    if (fullName == null) {
-      return;
-    }
-    const phone = window.prompt('Phone', this.user.phone)?.trim() ?? this.user.phone;
-    const email = window.prompt('Email', this.user.email)?.trim() ?? this.user.email;
-    await this.guarded(() => this.accountSvc.updateProfile({ fullName, phone, email }));
+  // ── Profile edit state ────────────────────────────────────────────────────
+  startEditProfile(): void {
+    this.profileForm = {
+      fullName: this.user.name,
+      email: this.user.email,
+      phone: this.user.phone,
+      language: this.user.language,
+      timezone: this.user.timezone,
+    };
+    this.profileErrors = {};
+    this.profileServerError = '';
+    this.editingProfile = true;
   }
 
-  async changePassword(): Promise<void> {
-    const current = window.prompt('Current password');
-    if (!current) {
+  cancelEditProfile(): void {
+    this.editingProfile = false;
+    this.profileErrors = {};
+    this.profileServerError = '';
+  }
+
+  async saveProfile(): Promise<void> {
+    if (this.busy) {
       return;
     }
-    const next = window.prompt('New password (min 8 chars)');
-    if (!next) {
+    if (!this.validateProfile()) {
       return;
     }
-    if (next.length < 8) {
-      window.alert('Password must be at least 8 characters.');
-      return;
+    this.busy = true;
+    this.profileServerError = '';
+    try {
+      const account = await this.accountSvc.updateProfile({
+        fullName: this.profileForm.fullName.trim(),
+        email: this.profileForm.email.trim(),
+        phone: this.profileForm.phone.trim(),
+        language: this.profileForm.language.trim(),
+        timezone: this.profileForm.timezone.trim(),
+      });
+      this.applyAccount(account);
+      this.auth.updateCachedAccount(account);
+      this.editingProfile = false;
+    } catch (e) {
+      this.profileServerError = this.serverMessage(e, 'Could not save profile.');
+    } finally {
+      this.busy = false;
     }
+  }
+
+  private validateProfile(): boolean {
+    const errs: Record<string, string> = {};
+    const f = this.profileForm;
+
+    const name = f.fullName.trim();
+    if (!name) {
+      errs['fullName'] = 'Full name is required.';
+    } else if (name.length < 2 || name.length > 80) {
+      errs['fullName'] = 'Full name must be 2–80 characters.';
+    }
+
+    const email = f.email.trim();
+    if (!email) {
+      errs['email'] = 'Email is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errs['email'] = 'Enter a valid email address.';
+    }
+
+    const phone = f.phone.trim();
+    if (phone && !/^[+]?[\d\s()-]{7,20}$/.test(phone)) {
+      errs['phone'] = 'Enter a valid phone number (7–20 digits).';
+    }
+
+    if (!f.language.trim()) {
+      errs['language'] = 'Language is required.';
+    }
+    if (!f.timezone.trim()) {
+      errs['timezone'] = 'Timezone is required.';
+    }
+
+    this.profileErrors = errs;
+    return Object.keys(errs).length === 0;
+  }
+
+  // ── Preferences edit state ──────────────────────────────────────────────────
+  startEditPrefs(): void {
+    this.prefsForm = {
+      theme: this.prefs.theme,
+      density: this.prefs.density,
+      landing: this.prefs.landing,
+      timeFormat: this.prefs.timeFormat,
+    };
+    this.editingPrefs = true;
+  }
+
+  cancelEditPrefs(): void {
+    this.editingPrefs = false;
+  }
+
+  async savePrefs(): Promise<void> {
     if (this.busy) {
       return;
     }
     this.busy = true;
     try {
-      await this.accountSvc.changePassword(current, next);
-      await this.refresh();
-      window.alert('Password changed.');
+      const account = await this.accountSvc.updatePreferences({
+        theme: this.prefsForm.theme,
+        density: this.prefsForm.density,
+        landingPage: this.prefsForm.landing,
+        timeFormat: this.prefsForm.timeFormat,
+      });
+      this.applyAccount(account);
+      this.auth.updateCachedAccount(account);
+      this.editingPrefs = false;
     } catch {
-      window.alert('Could not change password — check your current password.');
+      await this.refresh();
     } finally {
       this.busy = false;
     }
+  }
+
+  // ── Password modal ──────────────────────────────────────────────────────────
+  openPassword(): void {
+    this.pwForm = { current: '', next: '', confirm: '' };
+    this.pwErrors = {};
+    this.pwServerError = '';
+    this.pwSuccess = false;
+    this.showPasswordModal = true;
+  }
+
+  closePassword(): void {
+    this.showPasswordModal = false;
+  }
+
+  async savePassword(): Promise<void> {
+    if (this.busy) {
+      return;
+    }
+    if (!this.validatePassword()) {
+      return;
+    }
+    this.busy = true;
+    this.pwServerError = '';
+    try {
+      await this.accountSvc.changePassword(this.pwForm.current, this.pwForm.next);
+      this.pwSuccess = true;
+      await this.refresh();
+      this.showPasswordModal = false;
+    } catch (e) {
+      this.pwServerError = this.serverMessage(
+        e,
+        'Could not change password — check your current one.',
+      );
+    } finally {
+      this.busy = false;
+    }
+  }
+
+  private validatePassword(): boolean {
+    const errs: Record<string, string> = {};
+    const f = this.pwForm;
+
+    if (!f.current) {
+      errs['current'] = 'Enter your current password.';
+    }
+    if (!f.next) {
+      errs['next'] = 'Enter a new password.';
+    } else if (f.next.length < 8 || f.next.length > 128) {
+      errs['next'] = 'Password must be 8–128 characters.';
+    } else if (!/^(?=.*[A-Za-z])(?=.*\d).+$/.test(f.next)) {
+      errs['next'] = 'Use at least one letter and one number.';
+    } else if (f.next === f.current) {
+      errs['next'] = 'New password must differ from the current one.';
+    }
+    if (!f.confirm) {
+      errs['confirm'] = 'Re-enter the new password.';
+    } else if (f.confirm !== f.next) {
+      errs['confirm'] = 'Passwords do not match.';
+    }
+
+    this.pwErrors = errs;
+    return Object.keys(errs).length === 0;
+  }
+
+  /** Pull a human message out of an HttpErrorResponse-ish thrown value. */
+  private serverMessage(e: unknown, fallback: string): string {
+    const err = e as
+      | { error?: { message?: string; validationErrors?: Record<string, string> } }
+      | undefined;
+    const fieldErrors = err?.error?.validationErrors;
+    if (fieldErrors && typeof fieldErrors === 'object') {
+      const first = Object.values(fieldErrors)[0];
+      if (typeof first === 'string' && first) {
+        return first;
+      }
+    }
+    return err?.error?.message || fallback;
   }
 
   async toggleMfa(): Promise<void> {
