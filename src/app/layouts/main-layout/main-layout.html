@@ -14,11 +14,13 @@
       </label>
 
       <div class="actions">
-        <span class="material-symbols-outlined">monitor_heart</span>
+        <button class="icon-btn" type="button" title="System health">
+          <span class="material-symbols-outlined">monitor_heart</span>
+        </button>
 
         <div class="notif-wrap" (click)="$event.stopPropagation()">
           <button
-            class="notif-btn"
+            class="icon-btn notif-btn"
             type="button"
             (click)="toggleNotifications($event)"
             [class.active]="notifOpen"
@@ -68,7 +70,9 @@
           }
         </div>
 
-        <span class="material-symbols-outlined">settings</span>
+        <button class="icon-btn" type="button" title="Settings">
+          <span class="material-symbols-outlined">settings</span>
+        </button>
         <a
           routerLink="/app/profile"
           routerLinkActive="active"
