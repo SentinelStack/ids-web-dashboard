@@ -85,38 +85,62 @@
         </div>
 
         @if (!editingProfile) {
-          <div class="info-grid">
-            <div>
-              <p class="k">Full Name</p>
-              <p>{{ user.name }}</p>
+          <div class="field-list">
+            <div class="fi">
+              <span class="fi-ic material-symbols-outlined">badge</span>
+              <div class="fi-body">
+                <p class="k">Full Name</p>
+                <p class="v">{{ user.name }}</p>
+              </div>
             </div>
-            <div>
-              <p class="k">Username</p>
-              <p>{{ user.username }}</p>
+            <div class="fi">
+              <span class="fi-ic material-symbols-outlined">alternate_email</span>
+              <div class="fi-body">
+                <p class="k">Username</p>
+                <p class="v">{{ user.username }}</p>
+              </div>
             </div>
-            <div>
-              <p class="k">Email</p>
-              <p>{{ user.email }}</p>
+            <div class="fi">
+              <span class="fi-ic material-symbols-outlined">mail</span>
+              <div class="fi-body">
+                <p class="k">Email</p>
+                <p class="v">{{ user.email }}</p>
+              </div>
             </div>
-            <div>
-              <p class="k">Phone</p>
-              <p>{{ user.phone }}</p>
+            <div class="fi">
+              <span class="fi-ic material-symbols-outlined">call</span>
+              <div class="fi-body">
+                <p class="k">Phone</p>
+                <p class="v">{{ user.phone }}</p>
+              </div>
             </div>
-            <div>
-              <p class="k">Language</p>
-              <p>{{ user.language }}</p>
+            <div class="fi">
+              <span class="fi-ic material-symbols-outlined">translate</span>
+              <div class="fi-body">
+                <p class="k">Language</p>
+                <p class="v">{{ user.language }}</p>
+              </div>
             </div>
-            <div>
-              <p class="k">Timezone</p>
-              <p>{{ user.timezone }}</p>
+            <div class="fi">
+              <span class="fi-ic material-symbols-outlined">public</span>
+              <div class="fi-body">
+                <p class="k">Timezone</p>
+                <p class="v">{{ user.timezone }}</p>
+              </div>
             </div>
-            <div>
-              <p class="k">Account ID</p>
-              <p class="mono">{{ user.accountId }}</p>
+            <div class="fi">
+              <span class="fi-ic material-symbols-outlined">fingerprint</span>
+              <div class="fi-body">
+                <p class="k">Account ID</p>
+                <p class="v mono">{{ user.accountId }}</p>
+              </div>
             </div>
-            <div>
-              <p class="k">Account Status</p>
-              <p class="ok">Active</p>
+            <div class="fi">
+              <span class="fi-ic material-symbols-outlined ok">check_circle</span>
+              <div class="fi-body">
+                <p class="k">Account Status</p>
+                <p class="v ok">Active</p>
+              </div>
             </div>
           </div>
         } @else {
@@ -289,30 +313,77 @@
     <div class="col wide">
       <section class="card panel">
         <div class="panel-head"><h4>Security Settings</h4></div>
-        <div class="sec-grid">
-          <div>
-            <p class="k">Multi-Factor Authentication</p>
-            <p class="cyan">{{ security.mfa }}</p>
+        <div class="sec-list">
+          <div class="si">
+            <span
+              class="si-ic material-symbols-outlined"
+              [class.good]="mfaActive"
+              [class.warn]="!mfaActive"
+            >
+              {{ mfaActive ? 'verified_user' : 'gpp_maybe' }}
+            </span>
+            <div class="si-body">
+              <p class="k">Multi-Factor Authentication</p>
+              <p class="si-sub">Authenticator app (TOTP)</p>
+            </div>
+            <span class="state" [class.on]="mfaActive" [class.off]="!mfaActive">{{
+              security.mfa
+            }}</span>
           </div>
-          <div>
-            <p class="k">Password Last Changed</p>
-            <p>{{ security.passwordChanged }}</p>
+
+          <div class="si">
+            <span class="si-ic material-symbols-outlined good">notifications_active</span>
+            <div class="si-body">
+              <p class="k">Login Alerts</p>
+              <p class="si-sub">Notify on new sign-ins</p>
+            </div>
+            <span class="state on">{{ security.loginAlerts }}</span>
           </div>
-          <div>
-            <p class="k">Login Alerts</p>
-            <p class="cyan">{{ security.loginAlerts }}</p>
+
+          <div class="si">
+            <span class="si-ic material-symbols-outlined">key</span>
+            <div class="si-body">
+              <p class="k">Password Last Changed</p>
+              <p class="si-sub">{{ security.passwordChanged }}</p>
+            </div>
+            <span class="state neutral">{{ security.passwordChanged }}</span>
           </div>
-          <div>
-            <p class="k">Trusted Device</p>
-            <p>{{ security.trustedDevice }}</p>
+
+          <div class="si">
+            <span class="si-ic material-symbols-outlined">devices</span>
+            <div class="si-body">
+              <p class="k">Trusted Device</p>
+              <p class="si-sub">{{ security.trustedDevice || 'This browser' }}</p>
+            </div>
+            <span class="state neutral">Active</span>
           </div>
-          <div>
-            <p class="k">Session Timeout</p>
-            <p>{{ security.sessionTimeout }}</p>
+
+          <div class="si">
+            <span class="si-ic material-symbols-outlined">timer</span>
+            <div class="si-body">
+              <p class="k">Session Timeout</p>
+              <p class="si-sub">Auto sign-out when idle</p>
+            </div>
+            <span class="state neutral">{{ security.sessionTimeout }}</span>
           </div>
-          <div>
-            <p class="k">API Access</p>
-            <p class="dim">{{ security.apiAccess }}</p>
+
+          <div class="si">
+            <span
+              class="si-ic material-symbols-outlined"
+              [class.good]="security.apiAccess === 'Enabled'"
+              >api</span
+            >
+            <div class="si-body">
+              <p class="k">API Access</p>
+              <p class="si-sub">Programmatic tokens</p>
+            </div>
+            <span
+              class="state"
+              [class.on]="security.apiAccess === 'Enabled'"
+              [class.off]="security.apiAccess !== 'Enabled'"
+            >
+              {{ security.apiAccess }}
+            </span>
           </div>
         </div>
         <div class="row-actions">
