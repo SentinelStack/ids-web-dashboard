@@ -26,8 +26,8 @@
     <div class="head-actions">
       <button (click)="startEditProfile()" [disabled]="busy || editingProfile">Edit Profile</button>
       <button (click)="openPassword()" [disabled]="busy">Change Password</button>
-      <button class="primary" (click)="toggleMfa()" [disabled]="busy">
-        {{ security.mfa === 'Enabled' ? 'Disable MFA' : 'Enable MFA' }}
+      <button class="primary" (click)="openMfa()" [disabled]="busy">
+        {{ security.mfa === 'Enabled' ? 'Disable 2FA' : 'Enable 2FA' }}
       </button>
     </div>
   </section>
@@ -316,8 +316,8 @@
           </div>
         </div>
         <div class="row-actions">
-          <button (click)="toggleMfa()" [disabled]="busy">
-            {{ security.mfa === 'Enabled' ? 'Disable MFA' : 'Enable MFA' }}
+          <button (click)="openMfa()" [disabled]="busy">
+            {{ security.mfa === 'Enabled' ? 'Disable 2FA' : 'Enable 2FA' }}
           </button>
           @if (activeSessions > 1) {
             <button (click)="signOutOthers()" [disabled]="busy">Review Sessions</button>
@@ -468,6 +468,73 @@
           </button>
           <button type="submit" class="save" [disabled]="busy">
             {{ busy ? 'Updating…' : 'Update Password' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- Two-factor setup / disable modal -->
+@if (showMfaModal) {
+  <div class="modal-backdrop" (click)="closeMfa()">
+    <div class="modal card" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h3>{{ mfaMode === 'setup' ? 'Enable Two-Factor Auth' : 'Disable Two-Factor Auth' }}</h3>
+        <button class="x" (click)="closeMfa()" [disabled]="busy">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      @if (mfaMode === 'setup') {
+        <div class="mfa-setup">
+          <ol class="steps">
+            <li>Scan this QR code in Google Authenticator, Authy or 1Password.</li>
+            <li>Enter the 6-digit code it shows to finish enabling 2FA.</li>
+          </ol>
+          @if (mfaSetupData) {
+            <div class="qr">
+              <img [src]="mfaSetupData.qrDataUri" alt="2FA QR code" />
+            </div>
+            <p class="manual">
+              Can't scan? Enter this key manually:
+              <code>{{ mfaSetupData.secret }}</code>
+            </p>
+          } @else {
+            <p class="manual">Preparing your secret…</p>
+          }
+        </div>
+      } @else {
+        <p class="mfa-note">
+          Enter a current code from your authenticator app to turn off two-factor authentication.
+        </p>
+      }
+
+      <form class="edit-form" novalidate (ngSubmit)="confirmMfa()">
+        <label class="field" [class.invalid]="mfaError">
+          <span class="k">Verification Code</span>
+          <input
+            type="text"
+            name="mfaCode"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            maxlength="6"
+            placeholder="000000"
+            class="code-input"
+            [(ngModel)]="mfaCode"
+          />
+          @if (mfaError) {
+            <span class="err">{{ mfaError }}</span>
+          }
+        </label>
+        <div class="form-actions">
+          <button type="button" class="ghost" (click)="closeMfa()" [disabled]="busy">Cancel</button>
+          <button
+            type="submit"
+            class="save"
+            [disabled]="busy || (mfaMode === 'setup' && !mfaSetupData)"
+          >
+            {{ busy ? 'Working…' : mfaMode === 'setup' ? 'Verify & Enable' : 'Verify & Disable' }}
           </button>
         </div>
       </form>

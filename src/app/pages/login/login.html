@@ -10,120 +10,163 @@
     <article class="auth-card">
       <div class="accent"></div>
 
-      <div class="tabs">
-        <button [class.active]="activeTab === 'login'" type="button" (click)="activeTab = 'login'">
-          Login
-        </button>
-        <button
-          [class.active]="activeTab === 'register'"
-          type="button"
-          (click)="activeTab = 'register'"
-        >
-          Register
-        </button>
-      </div>
-
-      @if (error) {
-        <p class="auth-error">{{ error }}</p>
-      }
-
-      @if (activeTab === 'login') {
-        <form class="form" novalidate (ngSubmit)="onLogin()">
-          <label for="identifier">Operator ID / Email</label>
-          <div class="field">
-            <span class="material-symbols-outlined">person</span>
-            <input
-              id="identifier"
-              name="username"
-              type="text"
-              placeholder="Enter credentials"
-              autocomplete="username"
-              [(ngModel)]="username"
-            />
-          </div>
-
-          <label for="passkey">Security Passkey</label>
-          <div class="field">
-            <span class="material-symbols-outlined">lock</span>
-            <input
-              id="passkey"
-              name="password"
-              type="password"
-              placeholder="••••••••••••"
-              autocomplete="current-password"
-              [(ngModel)]="password"
-            />
-          </div>
-
-          <div class="row">
-            <label class="check">
-              <input type="checkbox" />
-              <span>Maintain Connection</span>
-            </label>
-            <a href="#">Reset Passkey?</a>
-          </div>
-
-          <button class="primary" type="submit" [disabled]="busy">
-            <span class="material-symbols-outlined">power_settings_new</span>
-            {{ busy ? 'Authenticating…' : 'Initialize Session' }}
+      @if (step === 'credentials') {
+        <div class="tabs">
+          <button
+            [class.active]="activeTab === 'login'"
+            type="button"
+            (click)="activeTab = 'login'"
+          >
+            Login
           </button>
-        </form>
+          <button
+            [class.active]="activeTab === 'register'"
+            type="button"
+            (click)="activeTab = 'register'"
+          >
+            Register
+          </button>
+        </div>
+
+        @if (error) {
+          <p class="auth-error">{{ error }}</p>
+        }
+
+        @if (activeTab === 'login') {
+          <form class="form" novalidate (ngSubmit)="onLogin()">
+            <label for="identifier">Operator ID / Email</label>
+            <div class="field">
+              <span class="material-symbols-outlined">person</span>
+              <input
+                id="identifier"
+                name="username"
+                type="text"
+                placeholder="Enter credentials"
+                autocomplete="username"
+                [(ngModel)]="username"
+              />
+            </div>
+
+            <label for="passkey">Security Passkey</label>
+            <div class="field">
+              <span class="material-symbols-outlined">lock</span>
+              <input
+                id="passkey"
+                name="password"
+                type="password"
+                placeholder="••••••••••••"
+                autocomplete="current-password"
+                [(ngModel)]="password"
+              />
+            </div>
+
+            <div class="row">
+              <label class="check">
+                <input type="checkbox" />
+                <span>Maintain Connection</span>
+              </label>
+              <a href="#">Reset Passkey?</a>
+            </div>
+
+            <button class="primary" type="submit" [disabled]="busy">
+              <span class="material-symbols-outlined">power_settings_new</span>
+              {{ busy ? 'Authenticating…' : 'Initialize Session' }}
+            </button>
+          </form>
+        } @else {
+          <form class="form" novalidate (ngSubmit)="onRegister()">
+            <label for="operator">Operator Name</label>
+            <div class="field">
+              <span class="material-symbols-outlined">badge</span>
+              <input
+                id="operator"
+                name="regUsername"
+                type="text"
+                placeholder="Agent username"
+                [(ngModel)]="regUsername"
+              />
+            </div>
+
+            <label for="reg-email">Email</label>
+            <div class="field">
+              <span class="material-symbols-outlined">mail</span>
+              <input
+                id="reg-email"
+                name="regEmail"
+                type="email"
+                placeholder="name@aegis.local"
+                [(ngModel)]="regEmail"
+              />
+            </div>
+
+            <label for="reg-pass">Create Passkey</label>
+            <div class="field">
+              <span class="material-symbols-outlined">vpn_key</span>
+              <input
+                id="reg-pass"
+                name="regPassword"
+                type="password"
+                placeholder="Minimum 8 chars"
+                autocomplete="new-password"
+                [(ngModel)]="regPassword"
+              />
+            </div>
+
+            <button class="primary" type="submit" [disabled]="busy">
+              <span class="material-symbols-outlined">how_to_reg</span>
+              {{ busy ? 'Creating…' : 'Register Operator' }}
+            </button>
+          </form>
+        }
+
+        <div class="divider"><span>Alternative Auth</span></div>
+
+        <div class="social">
+          @if (googleEnabled) {
+            <div #googleBtn class="gbtn"></div>
+          } @else {
+            <button type="button" disabled title="Google sign-in is not configured yet">
+              <span class="material-symbols-outlined">account_circle</span>Google ID
+            </button>
+          }
+          <button type="button" disabled>
+            <span class="material-symbols-outlined">public</span>Federated
+          </button>
+        </div>
       } @else {
-        <form class="form" novalidate (ngSubmit)="onRegister()">
-          <label for="operator">Operator Name</label>
-          <div class="field">
-            <span class="material-symbols-outlined">badge</span>
-            <input
-              id="operator"
-              name="regUsername"
-              type="text"
-              placeholder="Agent username"
-              [(ngModel)]="regUsername"
-            />
-          </div>
+        <div class="mfa-step">
+          <span class="material-symbols-outlined shield">verified_user</span>
+          <h2>Two-Factor Verification</h2>
+          <p class="sub">Enter the 6-digit code from your authenticator app.</p>
 
-          <label for="reg-email">Email</label>
-          <div class="field">
-            <span class="material-symbols-outlined">mail</span>
-            <input
-              id="reg-email"
-              name="regEmail"
-              type="email"
-              placeholder="name@aegis.local"
-              [(ngModel)]="regEmail"
-            />
-          </div>
+          @if (error) {
+            <p class="auth-error">{{ error }}</p>
+          }
 
-          <label for="reg-pass">Create Passkey</label>
-          <div class="field">
-            <span class="material-symbols-outlined">vpn_key</span>
-            <input
-              id="reg-pass"
-              name="regPassword"
-              type="password"
-              placeholder="Minimum 8 chars"
-              autocomplete="new-password"
-              [(ngModel)]="regPassword"
-            />
-          </div>
+          <form class="form" novalidate (ngSubmit)="onVerifyMfa()">
+            <div class="field code">
+              <span class="material-symbols-outlined">pin</span>
+              <input
+                name="mfaCode"
+                type="text"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                maxlength="6"
+                placeholder="000000"
+                [(ngModel)]="mfaCode"
+              />
+            </div>
 
-          <button class="primary" type="submit" [disabled]="busy">
-            <span class="material-symbols-outlined">how_to_reg</span>
-            {{ busy ? 'Creating…' : 'Register Operator' }}
-          </button>
-        </form>
+            <button class="primary" type="submit" [disabled]="busy">
+              <span class="material-symbols-outlined">verified</span>
+              {{ busy ? 'Verifying…' : 'Verify & Continue' }}
+            </button>
+            <button class="ghost-link" type="button" (click)="cancelMfa()" [disabled]="busy">
+              Back to sign in
+            </button>
+          </form>
+        </div>
       }
-
-      <div class="divider"><span>Alternative Auth</span></div>
-
-      <div class="social">
-        <button type="button">
-          <span class="material-symbols-outlined">account_circle</span>Google ID
-        </button>
-        <button type="button">
-          <span class="material-symbols-outlined">public</span>Federated
-        </button>
-      </div>
     </article>
   </main>
 

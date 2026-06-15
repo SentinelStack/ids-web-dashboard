@@ -21,6 +21,12 @@ export interface AuditView {
   status: string;
 }
 
+export interface MfaSetup {
+  secret: string;
+  otpauthUri: string;
+  qrDataUri: string;
+}
+
 export interface ProfileUpdate {
   fullName?: string;
   email?: string;
@@ -81,9 +87,21 @@ export class AccountService {
     await firstValueFrom(this.api.post('/account/password', { currentPassword, newPassword }));
   }
 
-  async setMfa(enabled: boolean): Promise<AccountView> {
+  async mfaSetup(): Promise<MfaSetup> {
+    const res = await firstValueFrom(this.api.post<unknown, MfaSetup>('/account/mfa/setup', {}));
+    return res!.data as MfaSetup;
+  }
+
+  async mfaEnable(code: string): Promise<AccountView> {
     const res = await firstValueFrom(
-      this.api.post<{ enabled: boolean }, AccountView>('/account/mfa', { enabled }),
+      this.api.post<{ code: string }, AccountView>('/account/mfa/enable', { code }),
+    );
+    return res!.data as AccountView;
+  }
+
+  async mfaDisable(code: string): Promise<AccountView> {
+    const res = await firstValueFrom(
+      this.api.post<{ code: string }, AccountView>('/account/mfa/disable', { code }),
     );
     return res!.data as AccountView;
   }

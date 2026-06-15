@@ -275,6 +275,81 @@
     color: #00d1ff;
     box-shadow: 0 0 8px rgb(0 209 255 / 30%);
   }
+
+  button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    &:hover {
+      border-color: rgb(255 255 255 / 12%);
+      color: #bbc9cf;
+      box-shadow: none;
+    }
+  }
+
+  /* Google Identity Services renders its own iframe button here. */
+  .gbtn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 40px;
+  }
+}
+
+/* ---- Two-factor step ---- */
+.mfa-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+
+  .shield {
+    font-size: 44px;
+    color: var(--cyan, #29d8ff);
+    filter: drop-shadow(0 0 12px rgb(41 216 255 / 45%));
+  }
+
+  h2 {
+    margin: 6px 0 0;
+    font-size: 18px;
+    color: #e6edf6;
+  }
+
+  .sub {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: #90a2bb;
+    max-width: 280px;
+  }
+
+  .form {
+    width: 100%;
+  }
+
+  .field.code input {
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    letter-spacing: 0.5em;
+    padding-left: 0.5em;
+  }
+
+  .ghost-link {
+    margin-top: 12px;
+    background: none;
+    border: none;
+    color: #90a2bb;
+    font-size: 12px;
+    cursor: pointer;
+    &:hover {
+      color: #e6edf6;
+      text-decoration: underline;
+    }
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
 }
 
 footer {

@@ -2,7 +2,12 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AccountView, AuthService } from '../../core/services/auth.service';
-import { AccountService, AuditView, SessionView } from '../../core/services/account.service';
+import {
+  AccountService,
+  AuditView,
+  MfaSetup,
+  SessionView,
+} from '../../core/services/account.service';
 
 interface NotificationRow {
   key: string;
@@ -104,6 +109,12 @@ export class ProfilePageComponent implements OnInit {
   pwErrors: Record<string, string> = {};
   pwServerError = '';
   pwSuccess = false;
+
+  showMfaModal = false;
+  mfaMode: 'setup' | 'disable' = 'setup';
+  mfaSetupData: MfaSetup | null = null;
+  mfaCode = '';
+  mfaError = '';
 
   ngOnInit(): void {
     // Paint instantly from the cached account, then refresh from the backend.
@@ -344,9 +355,57 @@ export class ProfilePageComponent implements OnInit {
     return err?.error?.message || fallback;
   }
 
-  async toggleMfa(): Promise<void> {
-    const enable = !/enabled/i.test(this.security.mfa);
-    await this.guarded(() => this.accountSvc.setMfa(enable));
+  // ── Two-factor authentication ───────────────────────────────────────────
+  get mfaActive(): boolean {
+    return /enabled/i.test(this.security.mfa);
+  }
+
+  async openMfa(): Promise<void> {
+    this.mfaMode = this.mfaActive ? 'disable' : 'setup';
+    this.mfaCode = '';
+    this.mfaError = '';
+    this.mfaSetupData = null;
+    this.showMfaModal = true;
+    if (this.mfaMode === 'setup') {
+      this.busy = true;
+      try {
+        this.mfaSetupData = await this.accountSvc.mfaSetup();
+      } catch (e) {
+        this.mfaError = this.serverMessage(e, 'Could not start 2FA setup.');
+      } finally {
+        this.busy = false;
+      }
+    }
+  }
+
+  closeMfa(): void {
+    this.showMfaModal = false;
+  }
+
+  async confirmMfa(): Promise<void> {
+    if (this.busy) {
+      return;
+    }
+    if (!/^\d{6}$/.test(this.mfaCode.trim())) {
+      this.mfaError = 'Enter the 6-digit code from your authenticator app.';
+      return;
+    }
+    this.busy = true;
+    this.mfaError = '';
+    try {
+      const code = this.mfaCode.trim();
+      const account =
+        this.mfaMode === 'setup'
+          ? await this.accountSvc.mfaEnable(code)
+          : await this.accountSvc.mfaDisable(code);
+      this.applyAccount(account);
+      this.auth.updateCachedAccount(account);
+      this.showMfaModal = false;
+    } catch (e) {
+      this.mfaError = this.serverMessage(e, 'That code is incorrect — try again.');
+    } finally {
+      this.busy = false;
+    }
   }
 
   async signOutOthers(): Promise<void> {

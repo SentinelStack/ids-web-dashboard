@@ -28,8 +28,16 @@ export interface AccountView {
 }
 
 interface LoginResponse {
-  token: string;
-  account: AccountView;
+  token?: string;
+  account?: AccountView;
+  mfaRequired?: boolean;
+  mfaToken?: string;
+}
+
+/** Outcome of a first-step sign-in: either authenticated, or a 2FA prompt is needed. */
+export interface LoginResult {
+  mfaRequired: boolean;
+  mfaToken?: string;
 }
 
 /** Holds the JWT + cached account, and performs login/logout against the backend. */
@@ -58,19 +66,46 @@ export class AuthService {
     }
   }
 
-  async login(username: string, password: string): Promise<void> {
+  async login(username: string, password: string): Promise<LoginResult> {
     const res = await firstValueFrom(
       this.api.post<{ username: string; password: string }, LoginResponse>('/auth/login', {
         username,
         password,
       }),
     );
-    const data = res?.data;
+    return this.handleAuth(res?.data);
+  }
+
+  /** Second step when the account has 2FA: exchange the challenge + code for a session. */
+  async loginMfa(mfaToken: string, code: string): Promise<void> {
+    const res = await firstValueFrom(
+      this.api.post<{ mfaToken: string; code: string }, LoginResponse>('/auth/mfa', {
+        mfaToken,
+        code,
+      }),
+    );
+    this.handleAuth(res?.data);
+  }
+
+  /** Sign in with a Google ID token; may still return an mfaRequired result. */
+  async loginGoogle(idToken: string): Promise<LoginResult> {
+    const res = await firstValueFrom(
+      this.api.post<{ idToken: string }, LoginResponse>('/auth/google', { idToken }),
+    );
+    return this.handleAuth(res?.data);
+  }
+
+  /** Persist a token+account when present, or surface a 2FA challenge. */
+  private handleAuth(data: LoginResponse | undefined): LoginResult {
+    if (data?.mfaRequired && data.mfaToken) {
+      return { mfaRequired: true, mfaToken: data.mfaToken };
+    }
     if (!data?.token) {
       throw new Error('Login failed');
     }
     localStorage.setItem(AuthService.TOKEN_KEY, data.token);
     localStorage.setItem(AuthService.ACCOUNT_KEY, JSON.stringify(data.account));
+    return { mfaRequired: false };
   }
 
   async register(
