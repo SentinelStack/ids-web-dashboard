@@ -1,31 +1,10 @@
 <div class="dashboard-shell">
   <header class="topbar">
     <div class="topbar-left">
-      <div class="brand">AEGIS IDS</div>
-      <nav class="top-nav">
-        <a
-          routerLink="/app/dashboard"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: true }"
-        >
-          Main Console
-        </a>
-        <a
-          routerLink="/app/traffic"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: true }"
-        >
-          Network Analysis
-        </a>
-        <a
-          routerLink="/app/incidents"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: true }"
-        >
-          Incidents
-        </a>
-        <a>Forensics</a>
-      </nav>
+      <div class="brand">
+        <span class="material-symbols-outlined">security</span>
+        AEGIS IDS
+      </div>
     </div>
 
     <div class="topbar-right">
@@ -116,6 +95,7 @@
         <p>V6.4 Stable</p>
       </div>
 
+      <p class="menu-label">Monitoring</p>
       <nav class="menu">
         <a
           routerLink="/app/dashboard"
@@ -161,6 +141,7 @@
         </a>
       </nav>
 
+      <p class="menu-label">System</p>
       <nav class="menu secondary">
         <a
           routerLink="/app/logs"
