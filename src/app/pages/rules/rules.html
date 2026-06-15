@@ -50,15 +50,35 @@
       <aside class="left">
         <div class="card panel">
           <h3><span class="material-symbols-outlined">router</span> Router Inventory</h3>
+          <p class="panel-hint">Filter rules to a router</p>
           <div class="inventory">
-            @for (d of devices; track d.deviceId) {
-              <div class="inv-item">
-                <div class="inv-id">
-                  <span class="mono">{{ d.deviceId }}</span>
-                  <span class="mono dim">{{ d.ipAddress || '—' }}</span>
-                </div>
-                <span class="status tone-{{ deviceStatusTone(d.status) }}">{{ d.status }}</span>
+            <button
+              class="inv-item all"
+              [class.sel]="!selectedDeviceId"
+              (click)="selectRouter(null)"
+            >
+              <div class="inv-id">
+                <span class="name">All Routers</span>
+                <span class="dim">every edge agent</span>
               </div>
+              <span class="count-chip">{{ rules.length }}</span>
+            </button>
+            @for (d of devices; track d.deviceId) {
+              <button
+                class="inv-item"
+                [class.sel]="selectedDeviceId === d.deviceId"
+                (click)="selectRouter(d.deviceId)"
+              >
+                <span
+                  class="status-dot tone-{{ deviceStatusTone(d.status) }}"
+                  [title]="d.status"
+                ></span>
+                <div class="inv-id">
+                  <span class="name">{{ routerLabel(d) }}</span>
+                  <span class="mono dim">{{ d.ipAddress || '—' }} · {{ d.status }}</span>
+                </div>
+                <span class="count-chip">{{ rulesOnDevice(d.deviceId) }}</span>
+              </button>
             }
             @if (devices.length === 0) {
               <p class="empty mono">No routers registered.</p>
@@ -68,27 +88,43 @@
 
         <div class="card panel">
           <h3><span class="material-symbols-outlined">lan</span> Interface Scope</h3>
+          <p class="panel-hint">Filter by bound interface</p>
           <div class="chips">
             @for (i of interfaceScopes; track i) {
-              <span class="chip mono" [class.on]="i === 'wan'">{{ i }}</span>
+              <button
+                class="chip iface mono"
+                [class.on]="selectedInterface === i"
+                [disabled]="rulesOnInterface(i) === 0"
+                (click)="selectInterface(i)"
+              >
+                {{ i }}<span class="cnt">{{ rulesOnInterface(i) }}</span>
+              </button>
             }
           </div>
         </div>
 
         <div class="card panel">
-          <h3><span class="material-symbols-outlined">filter_list</span> Rule Filters</h3>
+          <h3><span class="material-symbols-outlined">filter_list</span> Category</h3>
           <div class="chips">
-            @for (f of filters; track f.label) {
+            @for (c of categories; track c.label) {
               <button
                 class="chip"
-                [class.active]="f.label === activeFilter"
-                (click)="setFilter(f.label)"
+                [class.active]="activeCategory === c.value"
+                (click)="setCategory(c.value)"
               >
-                {{ f.label }}
+                {{ c.label }}
               </button>
             }
           </div>
-          <input class="search" type="text" placeholder="Search rules…" [(ngModel)]="search" />
+          <div class="search-wrap">
+            <span class="material-symbols-outlined">search</span>
+            <input type="text" placeholder="Search rules…" [(ngModel)]="search" />
+          </div>
+          @if (hasActiveFilter) {
+            <button class="clear" (click)="clearFilters()">
+              <span class="material-symbols-outlined">close</span> Clear filters
+            </button>
+          }
         </div>
       </aside>
 
@@ -96,7 +132,7 @@
       <section class="card library">
         <div class="lib-head">
           <h3>Router Rules Library</h3>
-          <span class="mono count">{{ visibleRules.length }} DEFINITIONS</span>
+          <span class="mono count">{{ visibleRules.length }} / {{ rules.length }} RULES</span>
         </div>
         <div class="lib-body">
           <table>

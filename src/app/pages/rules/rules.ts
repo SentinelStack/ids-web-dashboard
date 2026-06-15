@@ -64,15 +64,19 @@ interface TriggerVM {
   tone: Tone;
 }
 
-const FILTERS = [
-  { label: 'ALL', kind: 'all' },
-  { label: 'WAN', kind: 'iface', value: 'wan' },
-  { label: 'LAN', kind: 'iface', value: 'lan' },
-  { label: 'DDOS', kind: 'cat', value: 'DDOS' },
-  { label: 'PORT SCAN', kind: 'cat', value: 'PORT_SCAN' },
-  { label: 'DNS', kind: 'cat', value: 'DNS' },
-  { label: 'OUTBOUND', kind: 'cat', value: 'OUTBOUND' },
-] as const;
+interface Category {
+  label: string;
+  value: string | null;
+}
+
+const CATEGORIES: Category[] = [
+  { label: 'All', value: null },
+  { label: 'DDoS', value: 'DDOS' },
+  { label: 'SYN Flood', value: 'SYN_FLOOD' },
+  { label: 'Port Scan', value: 'PORT_SCAN' },
+  { label: 'DNS', value: 'DNS' },
+  { label: 'Outbound', value: 'OUTBOUND' },
+];
 
 @Component({
   selector: 'app-rules-page',
@@ -102,11 +106,14 @@ export class RulesPageComponent implements OnInit, OnDestroy {
   devices: DeviceDto[] = [];
   selected: RuleDto | null = null;
 
-  readonly filters = FILTERS;
-  activeFilter = 'ALL';
-  search = '';
-
+  readonly categories = CATEGORIES;
   readonly interfaceScopes = ['wan', 'br-lan', 'eth0', 'wlan0'];
+
+  // Composable filters — router, interface, category and search all narrow the table together.
+  selectedDeviceId: string | null = null;
+  selectedInterface: string | null = null;
+  activeCategory: string | null = null;
+  search = '';
 
   async ngOnInit(): Promise<void> {
     await Promise.all([this.loadRules(), this.loadDevices(), this.loadConsole()]);
@@ -121,20 +128,51 @@ export class RulesPageComponent implements OnInit, OnDestroy {
   }
 
   // ── Derived view ────────────────────────────────────────────────────────
+  /** True if rule `r` is effective on `deviceId` (its target, or global). */
+  private onDevice(r: RuleDto, deviceId: string): boolean {
+    return r.targetDeviceId === deviceId || r.targetDeviceId === '';
+  }
+
   get visibleRules(): RuleDto[] {
-    const f = this.filters.find((x) => x.label === this.activeFilter);
     const q = this.search.trim().toLowerCase();
     return this.rules.filter((r) => {
-      const matchesFilter =
-        !f || f.kind === 'all'
-          ? true
-          : f.kind === 'iface'
-            ? r.interfaceScope.toLowerCase().includes(f.value)
-            : r.category === f.value;
-      const matchesSearch =
+      const matchDevice = !this.selectedDeviceId || this.onDevice(r, this.selectedDeviceId);
+      const matchIface = !this.selectedInterface || r.interfaceScope === this.selectedInterface;
+      const matchCat = !this.activeCategory || r.category === this.activeCategory;
+      const matchSearch =
         !q || r.name.toLowerCase().includes(q) || r.ruleId.toLowerCase().includes(q);
-      return matchesFilter && matchesSearch;
+      return matchDevice && matchIface && matchCat && matchSearch;
     });
+  }
+
+  /** Any filter active? Drives the "Clear filters" affordance. */
+  get hasActiveFilter(): boolean {
+    return !!(
+      this.selectedDeviceId ||
+      this.selectedInterface ||
+      this.activeCategory ||
+      this.search
+    );
+  }
+
+  /** How many rules are effective on a router — shown as a count chip. */
+  rulesOnDevice(deviceId: string): number {
+    return this.rules.filter((r) => this.onDevice(r, deviceId)).length;
+  }
+
+  /** How many rules bind to an interface — shown under the chip. */
+  rulesOnInterface(iface: string): number {
+    return this.rules.filter((r) => r.interfaceScope === iface).length;
+  }
+
+  /** A short, readable router label (UUID device ids get truncated). */
+  routerLabel(d: DeviceDto): string {
+    if (d.name && d.name.trim() && !/^openwrt edge agent$/i.test(d.name)) {
+      return d.name;
+    }
+    return d.deviceId.length > 18
+      ? d.deviceId.slice(0, 8) + '…' + d.deviceId.slice(-4)
+      : d.deviceId;
   }
 
   // ── Loaders ─────────────────────────────────────────────────────────────
@@ -190,8 +228,25 @@ export class RulesPageComponent implements OnInit, OnDestroy {
     this.selected = rule;
   }
 
-  setFilter(label: string): void {
-    this.activeFilter = label;
+  /** Toggle the router filter (click the selected one again to clear it). */
+  selectRouter(deviceId: string | null): void {
+    this.selectedDeviceId = this.selectedDeviceId === deviceId ? null : deviceId;
+  }
+
+  /** Toggle the interface filter. */
+  selectInterface(iface: string): void {
+    this.selectedInterface = this.selectedInterface === iface ? null : iface;
+  }
+
+  setCategory(value: string | null): void {
+    this.activeCategory = value;
+  }
+
+  clearFilters(): void {
+    this.selectedDeviceId = null;
+    this.selectedInterface = null;
+    this.activeCategory = null;
+    this.search = '';
   }
 
   /** Deploy the selected rule to its router (records deployedAt server-side). */
