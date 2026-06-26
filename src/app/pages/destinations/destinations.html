@@ -103,7 +103,7 @@
             @for (c of byClient; track c.clientIp) {
               <div class="talker">
                 <div class="talker-top">
-                  <span class="talker-ip">{{ c.clientIp }}</span>
+                  <span class="talker-ip">{{ c.label }}</span>
                   <span class="talker-q">{{ c.queryCount | number }} q</span>
                 </div>
                 <div class="talker-domain" [style.color]="c.topColor">

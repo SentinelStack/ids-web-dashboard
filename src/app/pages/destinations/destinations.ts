@@ -22,6 +22,7 @@ interface DestinationsViewDto {
   topDomains: DomainDto[];
   byClient: {
     clientIp: string;
+    name?: string | null;
     queryCount: number;
     topDomain: string;
     domains: DomainDto[];
@@ -60,6 +61,7 @@ interface DomainVM {
 }
 interface ClientVM {
   clientIp: string;
+  label: string;
   queryCount: number;
   topDomain: string;
   topCategory: string;
@@ -184,6 +186,7 @@ export class DestinationsPageComponent implements OnInit, OnDestroy {
       });
       return {
         clientIp: c.clientIp,
+        label: c.name?.trim() ? c.name : c.clientIp,
         queryCount: c.queryCount,
         topDomain: c.topDomain,
         topCategory: c.domains[0]?.category ?? 'Other',

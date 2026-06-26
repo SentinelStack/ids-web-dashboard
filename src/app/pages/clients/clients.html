@@ -1,0 +1,104 @@
+@if (loaded) {
+  @if (hasData) {
+    <div class="clients-page fade-in">
+      <!-- STAT CARDS -->
+      <section class="summary-grid">
+        <article class="glass card stat">
+          <div class="head">
+            <span>Total Devices</span><span class="material-symbols-outlined">devices</span>
+          </div>
+          <div class="value">
+            <strong>{{ summary.total | number }}</strong>
+          </div>
+        </article>
+
+        <article class="glass card stat success">
+          <div class="head">
+            <span>Online</span><span class="material-symbols-outlined">wifi</span>
+          </div>
+          <div class="value">
+            <strong>{{ summary.online | number }}</strong>
+            <em><span class="material-symbols-outlined">bolt</span>live now</em>
+          </div>
+        </article>
+      </section>
+
+      <!-- CONNECTED DEVICES -->
+      <section class="glass card panel">
+        <div class="panel-head">
+          <div>
+            <span class="material-symbols-outlined">lan</span>
+            <h2>Connected Devices</h2>
+          </div>
+          <div class="actions">
+            <span class="live"><i></i>LIVE</span>
+          </div>
+        </div>
+
+        <div class="panel-body">
+          @for (c of clients; track c.mac) {
+            <div class="client-row" [class.offline]="!c.online">
+              <span class="status-dot" [class.online]="c.online"></span>
+
+              <div class="client-id">
+                @if (c.name) {
+                  <span class="client-name">{{ c.name }}</span>
+                } @else {
+                  <span class="client-name muted">Unknown device</span>
+                }
+                <div class="client-net">
+                  <span class="mono ip">{{ c.ip }}</span>
+                  <span class="mono mac">{{ c.mac }}</span>
+                </div>
+              </div>
+
+              <div class="client-meta">
+                <span class="q-chip">
+                  <span class="material-symbols-outlined">dns</span>
+                  {{ c.queryCount | number }}
+                </span>
+                <span class="client-dest mono">{{ c.topDestination }}</span>
+              </div>
+            </div>
+          } @empty {
+            <div class="client-row empty"><span class="client-name muted">—</span></div>
+          }
+        </div>
+      </section>
+    </div>
+  } @else {
+    <!-- EMPTY STATE -->
+    <div class="clients-page fade-in">
+      <section class="glass card empty-state">
+        <span class="material-symbols-outlined">devices_other</span>
+        <h2>No devices seen yet</h2>
+        <p>No devices seen yet — connect one to SentinelDemo.</p>
+      </section>
+    </div>
+  }
+} @else {
+  <div class="clients-page">
+    <section class="summary-grid">
+      @for (i of [0, 1]; track i) {
+        <article class="glass card stat">
+          <div class="head"><app-skeleton w="60%" h="12px" /></div>
+          <div class="value"><app-skeleton w="45%" h="30px" /></div>
+        </article>
+      }
+    </section>
+
+    <section class="glass card panel">
+      <div class="panel-head">
+        <div>
+          <span class="material-symbols-outlined">lan</span>
+          <h2>Connected Devices</h2>
+        </div>
+      </div>
+      <div class="panel-body" style="display: flex; flex-direction: column; gap: 12px">
+        @for (i of [0, 1, 2, 3, 4]; track i) {
+          <app-skeleton w="100%" h="52px" radius="10px" />
+        }
+      </div>
+    </section>
+  </div>
+}
