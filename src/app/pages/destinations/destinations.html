@@ -1,0 +1,234 @@
+@if (loaded) {
+  @if (hasData) {
+    <div class="destinations-page fade-in">
+      <!-- STAT CARDS -->
+      <section class="summary-grid">
+        <article class="glass card stat">
+          <div class="head">
+            <span>Total Queries</span><span class="material-symbols-outlined">dns</span>
+          </div>
+          <div class="value">
+            <strong>{{ summary.totalQueries | number }}</strong>
+          </div>
+        </article>
+
+        <article class="glass card stat">
+          <div class="head">
+            <span>Unique Domains</span><span class="material-symbols-outlined">travel_explore</span>
+          </div>
+          <div class="value">
+            <strong>{{ summary.uniqueDomains | number }}</strong>
+          </div>
+        </article>
+
+        <article class="glass card stat">
+          <div class="head">
+            <span>Active Clients</span><span class="material-symbols-outlined">devices</span>
+          </div>
+          <div class="value">
+            <strong>{{ summary.activeClients | number }}</strong>
+          </div>
+        </article>
+
+        <article class="glass card stat warning">
+          <div class="head">
+            <span>Tracker Hits</span><span class="material-symbols-outlined">block</span>
+          </div>
+          <div class="value">
+            <strong>{{ summary.trackerQueries | number }}</strong>
+            <em><span class="material-symbols-outlined">privacy_tip</span>blocked-worthy</em>
+          </div>
+        </article>
+      </section>
+
+      <!-- CATEGORIES STRIP -->
+      @if (categories.length) {
+        <section class="glass card cats">
+          <h3>Categories</h3>
+          <div class="cat-strip">
+            @for (c of categories; track c.category) {
+              <div class="cat-chip" [style.--c]="c.color">
+                <div class="cat-top">
+                  <span class="material-symbols-outlined">{{ c.icon }}</span>
+                  <span class="cat-name">{{ c.category }}</span>
+                  <small>{{ c.count | number }}</small>
+                </div>
+                <div class="cat-bar"><i [style.width.%]="c.pct"></i></div>
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      <section class="main-grid">
+        <!-- TOP DOMAINS -->
+        <article class="glass card panel">
+          <div class="panel-head">
+            <div>
+              <span class="material-symbols-outlined">leaderboard</span>
+              <h2>Top Domains</h2>
+            </div>
+          </div>
+          <div class="panel-body">
+            @for (d of topDomains; track d.domain) {
+              <div class="dom-row">
+                <i class="dom-fill" [style.--c]="d.color" [style.width.%]="d.pct"></i>
+                <span class="material-symbols-outlined dom-icon" [style.color]="d.color">{{
+                  d.icon
+                }}</span>
+                <span class="dom-name">{{ d.domain }}</span>
+                <span class="badge" [style.--c]="d.color">{{ d.category }}</span>
+                @if (d.tracker) {
+                  <span class="chip-tracker">
+                    <span class="material-symbols-outlined">block</span>tracker
+                  </span>
+                }
+                <span class="dom-count">{{ d.count | number }}</span>
+              </div>
+            } @empty {
+              <div class="dom-row empty"><span class="dom-name">—</span></div>
+            }
+          </div>
+        </article>
+
+        <!-- TOP TALKERS -->
+        <aside class="glass card panel talkers">
+          <div class="panel-head">
+            <div>
+              <span class="material-symbols-outlined">forum</span>
+              <h2>Top Talkers</h2>
+            </div>
+          </div>
+          <div class="panel-body">
+            @for (c of byClient; track c.clientIp) {
+              <div class="talker">
+                <div class="talker-top">
+                  <span class="talker-ip">{{ c.clientIp }}</span>
+                  <span class="talker-q">{{ c.queryCount | number }} q</span>
+                </div>
+                <div class="talker-domain" [style.color]="c.topColor">
+                  <span class="material-symbols-outlined">{{ c.topIcon }}</span>
+                  <span class="mono">{{ c.topDomain }}</span>
+                </div>
+                <div class="talker-chips">
+                  @for (chip of c.chips; track $index) {
+                    <span class="mini-chip" [style.--c]="chip.color">
+                      <span class="material-symbols-outlined">{{ chip.icon }}</span>
+                      {{ chip.count | number }}
+                    </span>
+                  }
+                </div>
+              </div>
+            } @empty {
+              <div class="talker empty"><span class="talker-ip">—</span></div>
+            }
+          </div>
+        </aside>
+      </section>
+
+      <!-- RECENT ACTIVITY -->
+      <section class="glass card monitor">
+        <div class="monitor-head">
+          <div>
+            <span class="material-symbols-outlined">dns</span>
+            <h2>Recent DNS Activity</h2>
+          </div>
+          <div class="actions">
+            <span class="live"><i></i>LIVE</span>
+          </div>
+        </div>
+
+        <div class="recent-list">
+          @for (q of recent; track $index) {
+            <div class="recent-row" [class.tracker]="q.tracker">
+              <span class="dot" [style.background]="q.color"></span>
+              <span class="r-time">{{ q.time }}</span>
+              <span class="r-ip">{{ q.clientIp }}</span>
+              <span class="r-domain">{{ q.domain }}</span>
+              @if (q.tracker) {
+                <span class="chip-tracker sm">
+                  <span class="material-symbols-outlined">block</span>ad
+                </span>
+              }
+              <span class="r-count">×{{ q.count | number }}</span>
+            </div>
+          } @empty {
+            <div class="recent-row"><span class="r-domain">Waiting for DNS queries…</span></div>
+          }
+        </div>
+      </section>
+    </div>
+  } @else {
+    <!-- EMPTY STATE -->
+    <div class="destinations-page fade-in">
+      <section class="glass card empty-state">
+        <span class="material-symbols-outlined">travel_explore</span>
+        <h2>No DNS activity yet</h2>
+        <p>Connect a device and start browsing — destinations will show up here in real time.</p>
+      </section>
+    </div>
+  }
+} @else {
+  <div class="destinations-page">
+    <section class="summary-grid">
+      @for (i of [0, 1, 2, 3]; track i) {
+        <article class="glass card stat">
+          <div class="head"><app-skeleton w="60%" h="12px" /></div>
+          <div class="value"><app-skeleton w="45%" h="30px" /></div>
+        </article>
+      }
+    </section>
+
+    <section class="glass card cats">
+      <app-skeleton w="30%" h="14px" />
+      <div class="cat-strip" style="margin-top: 12px">
+        @for (i of [0, 1, 2, 3, 4]; track i) {
+          <app-skeleton w="120px" h="44px" radius="10px" />
+        }
+      </div>
+    </section>
+
+    <section class="main-grid">
+      <article class="glass card panel">
+        <div class="panel-head">
+          <div>
+            <span class="material-symbols-outlined">leaderboard</span>
+            <h2>Top Domains</h2>
+          </div>
+        </div>
+        <div class="panel-body" style="display: flex; flex-direction: column; gap: 10px">
+          @for (i of [0, 1, 2, 3, 4, 5]; track i) {
+            <app-skeleton w="100%" h="20px" />
+          }
+        </div>
+      </article>
+      <aside class="glass card panel talkers">
+        <div class="panel-head">
+          <div>
+            <span class="material-symbols-outlined">forum</span>
+            <h2>Top Talkers</h2>
+          </div>
+        </div>
+        <div class="panel-body" style="display: flex; flex-direction: column; gap: 14px">
+          @for (i of [0, 1, 2]; track i) {
+            <app-skeleton w="100%" h="48px" radius="10px" />
+          }
+        </div>
+      </aside>
+    </section>
+
+    <section class="glass card monitor">
+      <div class="monitor-head">
+        <div>
+          <span class="material-symbols-outlined">dns</span>
+          <h2>Recent DNS Activity</h2>
+        </div>
+      </div>
+      <div class="recent-list" style="padding: 14px">
+        @for (i of [0, 1, 2, 3, 4, 5]; track i) {
+          <app-skeleton w="100%" h="18px" />
+        }
+      </div>
+    </section>
+  </div>
+}

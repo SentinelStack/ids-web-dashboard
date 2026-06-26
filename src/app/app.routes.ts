@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { MainLayoutComponent } from './layouts/main-layout/main-layout';
 import { DashboardPageComponent } from './pages/dashboard/dashboard';
+import { DestinationsPageComponent } from './pages/destinations/destinations';
 import { IncidentsPageComponent } from './pages/incidents/incidents';
 import { LogViewerPageComponent } from './pages/log-viewer/log-viewer';
 import { LoginPageComponent } from './pages/login/login';
@@ -24,6 +25,7 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       { path: 'dashboard', component: DashboardPageComponent },
       { path: 'traffic', component: TrafficPageComponent },
+      { path: 'destinations', component: DestinationsPageComponent },
       { path: 'incidents', component: IncidentsPageComponent },
       { path: 'reports', component: ReportsPageComponent },
       { path: 'topology', component: TopologyPageComponent },
