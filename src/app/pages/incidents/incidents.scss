@@ -905,7 +905,7 @@ table {
   width: min(720px, 94vw);
   height: 100%;
   overflow-y: auto;
-  background: linear-gradient(180deg, #0b1119, #070b11);
+  background: radial-gradient(circle at 85% -5%, #0d2238 0%, var(--bg, #0a0c10) 48%);
   border-left: 1px solid rgb(76 214 255 / 18%);
   box-shadow: -24px 0 60px rgb(0 0 0 / 45%);
   padding: 22px;
